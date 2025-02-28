@@ -10,8 +10,8 @@ import (
 func main() {
 	fetcher.FetchManga(os.Args[1])
 	for _, manga := range storage.GetMangaList() {
-		fmt.Println("ID: " + manga.ID)
-		fmt.Println("Title: " + manga.MangaTitle)
+		fmt.Printf("ID: %v\n", manga.ID)
+		fmt.Printf("Title: %v\n", manga.MangaTitle)
 		fmt.Printf("Chapters: %v\n", manga.ChapterCount)
 		fmt.Println("")
 	}
