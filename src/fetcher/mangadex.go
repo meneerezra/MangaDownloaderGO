@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"mangaDownloaderGO/models"
+	"mangaDownloaderGO/storage"
 	"net/http"
 	"net/url"
 )
@@ -24,7 +26,7 @@ type Attributes struct {
 	Title map[string]string `json:"title"` // We only care about "title.en"
 }
 
-func FetchManga(mangaTitle string) {
+func RequestManga(mangaTitle string) []byte {
 	base, err := url.Parse(MangadexUrl + "/manga")
 	if err != nil {
 		panic(err);
@@ -42,50 +44,33 @@ func FetchManga(mangaTitle string) {
 	}
 
 	defer resp.Body.Close()
-	databyte, err := io.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		panic(err)
+		fmt.Println("Error reading JSON:", err)
 	}
 
-	var mangaDexResponse map[string]interface{}
-	json.Unmarshal(databyte, &mangaDexResponse)
-	dataSlice, ok := mangaDexResponse["data"].([]interface{})
-	if !ok {
-		fmt.Println("Error: 'data' is not a slice")
-		return
+	return body
+}
+
+func FetchManga(mangaTitle string) {
+	body := RequestManga(mangaTitle);
+
+	var mangadexResponse MangaDexResponse
+	if err := json.Unmarshal(body, &mangadexResponse); err != nil {
+		fmt.Println("Error decoding JSON:", err)
 	}
 
-	for i := range dataSlice {
-		element, ok := dataSlice[i].(map[string]interface{})
-
-		if !ok {
-			fmt.Println("Index does not exist in JSON")
-			return
-		}
-
+	for i, manga := range mangadexResponse.Data {
 		fmt.Println(i)
-		fmt.Println(element["id"])
-
-		attributes, ok := element["attributes"].(map[string]interface{})
-		if !ok {
-			fmt.Println("Attributes dont exist")
-			return
+		fmt.Println("ID: " + manga.ID)
+		fmt.Println("Titles:")
+		for _, title := range manga.Attributes.Title {
+			fmt.Println("- " + title)
+			fmt.Println()
 		}
-
-		titles, ok := attributes["title"].(map[string]interface{})
-		if !ok {
-			fmt.Println("Titles dont exist")
-			return
-		}
-
-		englishTitle, ok := titles["en"].(string)
-		if !ok {
-			fmt.Println("English title does not exist")
-			return
-		}
-
-		fmt.Println(englishTitle)
+		storage.AddToMangaList(models.Manga{
+			ID: manga.ID,
+			MangaTitle: manga.Attributes.Title["en"],
+		})
 	}
-
-
 }
