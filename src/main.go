@@ -1,14 +1,9 @@
 package main
 
 import (
-	"fmt"
+	"mangaDownloaderGO/fetcher"
 )
 
 func main() {
-	s := "gopher"
-	fmt.Println("Hello and welcome", s)
-
-	for i := 1; i <= 5; i++ {
-		fmt.Println("i =", 100/i)
-	}
+	fetcher.FetchManga("Eromanga-sensei")
 }
