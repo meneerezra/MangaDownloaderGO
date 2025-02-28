@@ -14,4 +14,5 @@ type Chapter struct {
 	ID string
 	Name string
 	ChapterNumber int
+	Volume int
 }
