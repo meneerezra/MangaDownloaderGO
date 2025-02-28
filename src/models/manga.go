@@ -1,6 +1,7 @@
 package models
 
 type Manga struct {
-	manga_title string
-	chapter_count int
+	ID           string
+	MangaTitle   string
+	ChapterCount int
 }
