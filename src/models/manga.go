@@ -5,3 +5,13 @@ type Manga struct {
 	MangaTitle   string
 	ChapterCount int
 }
+
+type Cover struct {
+	ID string
+}
+
+type Chapter struct {
+	ID string
+	Name string
+	ChapterNumber int
+}
