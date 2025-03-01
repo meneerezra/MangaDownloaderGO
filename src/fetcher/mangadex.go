@@ -54,10 +54,10 @@ func SetURL(url string) {
 	MangaDexUrl = url
 }
 
-func RequestToJsonBytes(urlString string, params url.Values) []byte {
+func RequestToJsonBytes(urlString string, params url.Values) ([]byte, error) {
 	base, err := url.Parse(urlString)
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
 
 	base.RawQuery = params.Encode()
@@ -74,10 +74,10 @@ func RequestToJsonBytes(urlString string, params url.Values) []byte {
 	defer resp.Body.Close()
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		fmt.Println("Error reading JSON:", err)
+		return nil,err
 	}
 
-	return body
+	return body, nil
 }
 
 // FetchMangas This returns a list of all manga's that were found based on the title given
@@ -86,7 +86,10 @@ func FetchMangas(mangaTitle string) ([]models.Manga, error) {
 
 	params := url.Values{}
 	params.Add("title", mangaTitle)
-	body := RequestToJsonBytes(MangaDexUrl+"/manga", params)
+	body, err := RequestToJsonBytes(MangaDexUrl+"/manga", params)
+	if err != nil {
+		panic(err)
+	}
 
 	var fetchedMangas []models.Manga
 	var mangadexResponse MangaDexMangaResponse
@@ -137,9 +140,13 @@ func DownloadChapter(chapter models.Chapter) {
 }
 
 func GetChaptersFromManga(manga models.Manga, params url.Values) ([]models.Chapter, error) {
+
 	var chapters []models.Chapter
 
-	body := RequestToJsonBytes(MangaDexUrl+"/manga/"+manga.ID+"/feed", params)
+	body, err := RequestToJsonBytes(MangaDexUrl+"/manga/"+manga.ID+"/feed", params)
+	if err != nil {
+		panic(err)
+	}
 
 	var mangadexResponse MangaDexChapterResponse
 
