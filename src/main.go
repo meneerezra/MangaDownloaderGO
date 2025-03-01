@@ -2,14 +2,23 @@ package main
 
 import (
 	"fmt"
+	"github.com/joho/godotenv"
 	"mangaDownloaderGO/fetcher"
 	"mangaDownloaderGO/storage"
 	"os"
 )
 
+func init() {
+	err := godotenv.Load("../.env")
+	if err != nil {
+		panic("Could not load .env: " + err.Error())
+	}
+}
+
 func main() {
 	//router := gin.Default()
-	//server.StartServer(router);
+	//server.StartServer(router)
+	fetcher.SetURL(os.Getenv("MANGADEX_URL"))
 
 	fetcher.FetchManga(os.Args[1])
 	for _, manga := range storage.GetMangaList() {
