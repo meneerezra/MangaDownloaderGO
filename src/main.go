@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"github.com/joho/godotenv"
 	"mangaDownloaderGO/fetcher"
-	"mangaDownloaderGO/storage"
 	"os"
 )
 
@@ -20,14 +19,15 @@ func main() {
 	//server.StartServer(router)
 	fetcher.SetURL(os.Getenv("MANGADEX_URL"))
 
-	fetcher.FetchManga(os.Args[1])
-	for _, manga := range storage.GetMangaList() {
-		fmt.Printf("ID: %v\n", manga.ID)
-		fmt.Printf("Title: %v\n", manga.MangaTitle)
-		fmt.Printf("Chapters: %v\n", manga.ChapterCount)
-		fmt.Println("")
+	fetchedMangas, err := fetcher.FetchMangas(os.Args[1])
+
+	if err != nil {
+		fmt.Println("[Error] While fetching manga's:", err)
 	}
 
-
+	for _, manga := range fetchedMangas {
+		fmt.Println("Manga:", manga.MangaTitle)
+		fmt.Println("Chapter count:", manga.ChapterCount)
+	}
 
 }

@@ -5,10 +5,10 @@ import (
 	"fmt"
 	"io"
 	"mangaDownloaderGO/models"
-	"mangaDownloaderGO/storage"
 	"net/http"
 	"net/url"
 	"os"
+	"strconv"
 )
 
 var MangaDexUrl string
@@ -27,33 +27,31 @@ type MangaAttributes struct {
 	Title map[string]string `json:"title"`
 }
 
-
-
 type MangaDexChapterResponse struct {
 	Data []MangaDexChapterDataItem `json:"data"`
-	_    struct{}                `json:"-"`
+	_    struct{}                  `json:"-"`
 }
 
 type MangaDexChapterDataItem struct {
-	ID         string          `json:"id"`
-	Attributes ChapterAttributes `json:"attributes"`
+	ID            string                 `json:"id"`
+	Attributes    ChapterAttributes      `json:"attributes"`
 	Relationships []ChapterRelationShips `json:"relationships"`
 }
 
 type ChapterAttributes struct {
-	Title string `json:"title"`
-	Volume string `json:"volume"`
-	Chapter string `json:"chapter"`
+	Title    string `json:"title"`
+	Volume   string `json:"volume"`
+	Chapter  string `json:"chapter"`
 	Language string `json:"translatedLanguage"`
 }
 
 type ChapterRelationShips struct {
-	ID string `json:"id"`
+	ID   string `json:"id"`
 	Type string `json:"type"`
 }
 
 func SetURL(url string) {
-	MangaDexUrl = url;
+	MangaDexUrl = url
 }
 
 func RequestToJsonBytes(urlString string, params url.Values) []byte {
@@ -82,7 +80,8 @@ func RequestToJsonBytes(urlString string, params url.Values) []byte {
 	return body
 }
 
-func FetchManga(mangaTitle string) {
+// FetchMangas This returns a list of all manga's that were found based on the title given
+func FetchMangas(mangaTitle string) ([]models.Manga, error) {
 	MangaDexUrl := os.Getenv("MANGADEX_URL")
 
 	params := url.Values{}
@@ -92,25 +91,18 @@ func FetchManga(mangaTitle string) {
 	var fetchedMangas []models.Manga
 	var mangadexResponse MangaDexMangaResponse
 	if err := json.Unmarshal(body, &mangadexResponse); err != nil {
-		fmt.Println("Error decoding JSON:", err)
+		return nil, err
 	}
 
 	for _, manga := range mangadexResponse.Data {
-		//fmt.Println(i)
-		//fmt.Println("ID: " + manga.ID)
-		//fmt.Println("Titles:")
-		//for _, title := range manga.MangaAttributes.Title {
-		//	fmt.Println("- " + title)
-		//	fmt.Println()
-		//}
 		mangaObject := models.Manga{
 			ID:         manga.ID,
 			MangaTitle: manga.Attributes.Title["en"],
 		}
 		fetchedMangas = append(fetchedMangas, mangaObject)
-		storage.AddToMangaList(mangaObject)
 	}
 
+	// URL parameters should prob add a parameter in the function for this
 	chapterParams := url.Values{}
 	languages := []string{"en"}
 
@@ -118,9 +110,22 @@ func FetchManga(mangaTitle string) {
 		chapterParams.Add("translatedLanguage[]", language)
 	}
 
+	var mangaListWithChapters []models.Manga
+
 	for _, fetchedManga := range fetchedMangas {
-		GetChapters(fetchedManga, chapterParams);
+		chapters, err := GetChaptersFromManga(fetchedManga, chapterParams)
+		if err != nil {
+			return nil, err
+		}
+
+		mangaWithChapters := fetchedManga
+		mangaWithChapters.ChapterCount = len(chapters)
+		mangaWithChapters.Chapters = chapters
+
+		mangaListWithChapters = append(mangaListWithChapters, mangaWithChapters)
 	}
+
+	return mangaListWithChapters, nil
 }
 
 func DownloadManga(manga models.Manga) {
@@ -131,25 +136,43 @@ func DownloadChapter(chapter models.Chapter) {
 
 }
 
-func GetChapters(manga models.Manga, params url.Values) {
+func GetChaptersFromManga(manga models.Manga, params url.Values) ([]models.Chapter, error) {
+	var chapters []models.Chapter
+
 	body := RequestToJsonBytes(MangaDexUrl+"/manga/"+manga.ID+"/feed", params)
-	fmt.Println(string(body))
+
 	var mangadexResponse MangaDexChapterResponse
+
 	if err := json.Unmarshal(body, &mangadexResponse); err != nil {
-		fmt.Println("Error decoding JSON:", err)
+		return nil, err
 	}
 
-	for _, chapter := range mangadexResponse.Data {
-		fmt.Println("Chapter ID",chapter.ID)
-		fmt.Println("Chapter Title",chapter.Attributes.Title)
-		fmt.Println("Chapter Volume",chapter.Attributes.Volume)
-		fmt.Println("Chapter",chapter.Attributes.Chapter)
-		fmt.Println("Chapter Translated Language",chapter.Attributes.Language)
-
-		for _, relationship := range chapter.Relationships {
-			fmt.Println("Chapter relationship id:", relationship.ID)
-			fmt.Println("Chapter relationship type:", relationship.Type)
+	for _, chapterData := range mangadexResponse.Data {
+		var relationShips []models.ChapterRelationship
+		for _, relationShip := range chapterData.Relationships {
+			relationShips = append(relationShips, models.ChapterRelationship{
+				ID:   relationShip.ID,
+				Type: relationShip.Type,
+			})
 		}
-		fmt.Println()
+
+		chapterNumber, err := strconv.ParseFloat(chapterData.Attributes.Chapter, 32)
+		// Sometimes a manga has no chapters and their value is null in the json and errors but go still converts it to 0 this is to filter out console spam
+		if err != nil && chapterData.Attributes.Chapter != "" {
+			fmt.Println("[Warning] Could not parse chapter:", err.Error())
+		}
+
+		chapter := models.Chapter{
+			ID:             chapterData.ID,
+			Manga:          manga,
+			Title:          chapterData.Attributes.Title,
+			ChapterNumber:  float32(chapterNumber),
+			Cover:          models.Cover{},
+			RelationsShips: relationShips,
+		}
+
+		chapters = append(chapters, chapter)
 	}
+
+	return chapters, nil
 }

@@ -4,7 +4,7 @@ type Manga struct {
 	ID           string
 	MangaTitle   string
 	ChapterCount int
-	Chapters []Chapter
+	Chapters     []Chapter
 }
 
 type Cover struct {
@@ -12,9 +12,15 @@ type Cover struct {
 }
 
 type Chapter struct {
-	ID string
-	Manga Manga
-	Name string
-	ChapterNumber int
-	Volume int
+	ID             string
+	Manga          Manga
+	Title          string
+	ChapterNumber  float32
+	Cover          Cover
+	RelationsShips []ChapterRelationship
+}
+
+type ChapterRelationship struct {
+	ID   string
+	Type string
 }
