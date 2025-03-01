@@ -1,4 +1,4 @@
-package models
+package obj
 
 type Manga struct {
 	ID           string
