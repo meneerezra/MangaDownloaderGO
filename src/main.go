@@ -2,15 +2,14 @@ package main
 
 import (
 	"fmt"
-	"github.com/gin-gonic/gin"
 	"mangaDownloaderGO/fetcher"
-	"mangaDownloaderGO/server"
 	"mangaDownloaderGO/storage"
 	"os"
 )
 
 func main() {
-	router := gin.Default()
+	//router := gin.Default()
+	//server.StartServer(router);
 
 	fetcher.FetchManga(os.Args[1])
 	for _, manga := range storage.GetMangaList() {
@@ -20,6 +19,6 @@ func main() {
 		fmt.Println("")
 	}
 
-	server.StartServer(router);
-}
 
+
+}
