@@ -1,14 +1,14 @@
 package storage
 
-import "mangaDownloaderGO/obj"
+import "mangaDownloaderGO/mangaStructs"
 
-var mangaList []obj.Manga
+var mangaList []mangaStructs.Manga
 
-func GetMangaList() []obj.Manga {
+func GetMangaList() []mangaStructs.Manga {
 	return mangaList;
 }
 
-func AddToMangaList(manga obj.Manga) {
+func AddToMangaList(manga mangaStructs.Manga) {
 	mangaList = append(mangaList, manga)
 }
 

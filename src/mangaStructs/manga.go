@@ -1,4 +1,4 @@
-package obj
+package mangaStructs
 
 type Manga struct {
 	ID           string
