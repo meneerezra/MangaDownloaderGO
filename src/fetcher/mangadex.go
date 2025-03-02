@@ -9,6 +9,7 @@ import (
 	"net/url"
 	"os"
 	"strconv"
+	"time"
 )
 
 var MangaDexUrl string
@@ -18,6 +19,9 @@ func SetURL(url string) {
 }
 
 func RequestToJsonBytes(urlString string, params url.Values) ([]byte, error) {
+	timer1 := time.NewTimer(5 * time.Second)
+
+	<-timer1.C
 	base, err := url.Parse(urlString)
 	if err != nil {
 		return nil, err
@@ -75,15 +79,16 @@ func FetchMangas(mangaTitle string) ([]mangaStructs.Manga, error) {
 	var mangaListWithChapters []mangaStructs.Manga
 	for _, fetchedManga := range fetchedMangas {
 		chapterParams := url.Values{}
-		languages := []string{"en"}
+		//languages := []string{"en"}
 
 		chapterParams.Add("order[chapter]", "asc")
-		for _, language := range languages {
-			chapterParams.Add("translatedLanguage[]", language)
-		}
+		chapterParams.Add("limit", "500")
+		//for _, language := range languages {
+		//	chapterParams.Add("translatedLanguage[]", language)
+		//}
 
 		// Limit refers to the limit of the amount of chapters set in url query default = 100
-		manga, err := AddChaptersToManga(fetchedManga, chapterParams, 100)
+		manga, err := AddChaptersToManga(fetchedManga, chapterParams, 500)
 		if err != nil {
 			return nil, err
 		}
@@ -113,7 +118,7 @@ func AddChaptersToManga(manga mangaStructs.Manga, params url.Values, limit int) 
 	manga.Chapters = append(manga.Chapters, chapters...)
 
 	if chapterCount >= limit {
-		offset := 0
+		offset := limit
 		if params.Has("offset") {
 			offsetFromJSON, err := strconv.Atoi(params.Get("offset"))
 			if err != nil {
