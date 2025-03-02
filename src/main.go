@@ -23,6 +23,7 @@ func main() {
 
 	if err != nil {
 		fmt.Println("[Error] While fetching manga's:", err)
+		return
 	}
 
 	for _, manga := range fetchedMangas {
