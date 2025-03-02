@@ -37,7 +37,7 @@ func RequestToJsonBytes(urlString string, params url.Values) ([]byte, error) {
 	defer resp.Body.Close()
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return nil,err
+		return nil, err
 	}
 
 	return body, nil
@@ -61,34 +61,33 @@ func FetchMangas(mangaTitle string) ([]mangaStructs.Manga, error) {
 	}
 
 	for _, manga := range mangadexResponse.Data {
+		var chapters []mangaStructs.Chapter
 		mangaObject := mangaStructs.Manga{
 			ID:         manga.ID,
 			MangaTitle: manga.Attributes.Title["en"],
+			Chapters:   chapters,
+			ChapterCount: 0,
 		}
 		fetchedMangas = append(fetchedMangas, mangaObject)
 	}
 
-	// URL parameters should prob add a parameter in the function for this
-	chapterParams := url.Values{}
-	languages := []string{"en"}
-
-	for _, language := range languages {
-		chapterParams.Add("translatedLanguage[]", language)
-	}
 
 	var mangaListWithChapters []mangaStructs.Manga
-
 	for _, fetchedManga := range fetchedMangas {
-		chapters, err := GetChaptersFromManga(fetchedManga, chapterParams)
+		chapterParams := url.Values{}
+		languages := []string{"en"}
+
+		chapterParams.Add("order[chapter]", "asc")
+		for _, language := range languages {
+			chapterParams.Add("translatedLanguage[]", language)
+		}
+
+		// Limit refers to the limit of the amount of chapters set in url query default = 100
+		manga, err := AddChaptersToManga(fetchedManga, chapterParams, 100)
 		if err != nil {
 			return nil, err
 		}
-
-		mangaWithChapters := fetchedManga
-		mangaWithChapters.ChapterCount = len(chapters)
-		mangaWithChapters.Chapters = chapters
-
-		mangaListWithChapters = append(mangaListWithChapters, mangaWithChapters)
+		mangaListWithChapters = append(mangaListWithChapters, manga)
 	}
 
 	return mangaListWithChapters, nil
@@ -100,6 +99,35 @@ func DownloadManga(manga mangaStructs.Manga) {
 
 func DownloadChapter(chapter mangaStructs.Chapter) {
 
+}
+
+func AddChaptersToManga(manga mangaStructs.Manga, params url.Values, limit int) (mangaStructs.Manga, error) {
+	chapters, err := GetChaptersFromManga(manga, params)
+	if err != nil {
+		return manga, err
+	}
+
+	chapterCount := len(chapters)
+
+	manga.ChapterCount += chapterCount
+	manga.Chapters = append(manga.Chapters, chapters...)
+
+	if chapterCount >= limit {
+		offset := 0
+		if params.Has("offset") {
+			offsetFromJSON, err := strconv.Atoi(params.Get("offset"))
+			if err != nil {
+				return manga, err
+			}
+
+			offset = offsetFromJSON + limit
+		}
+
+		params.Set("offset", strconv.Itoa(offset))
+		return AddChaptersToManga(manga, params, limit)
+	}
+
+	return manga, nil
 }
 
 func GetChaptersFromManga(manga mangaStructs.Manga, params url.Values) ([]mangaStructs.Chapter, error) {
