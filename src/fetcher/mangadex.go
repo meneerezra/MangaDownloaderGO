@@ -9,7 +9,6 @@ import (
 	"net/url"
 	"os"
 	"strconv"
-	"time"
 )
 
 var MangaDexUrl string
@@ -19,9 +18,6 @@ func SetURL(url string) {
 }
 
 func RequestToJsonBytes(urlString string, params url.Values) ([]byte, error) {
-	timer1 := time.NewTimer(5 * time.Second)
-
-	<-timer1.C
 	base, err := url.Parse(urlString)
 	if err != nil {
 		return nil, err
@@ -67,14 +63,13 @@ func FetchMangas(mangaTitle string) ([]mangaStructs.Manga, error) {
 	for _, manga := range mangadexResponse.Data {
 		var chapters []mangaStructs.Chapter
 		mangaObject := mangaStructs.Manga{
-			ID:         manga.ID,
-			MangaTitle: manga.Attributes.Title["en"],
-			Chapters:   chapters,
+			ID:           manga.ID,
+			MangaTitle:   manga.Attributes.Title["en"],
+			Chapters:     chapters,
 			ChapterCount: 0,
 		}
 		fetchedMangas = append(fetchedMangas, mangaObject)
 	}
-
 
 	var mangaListWithChapters []mangaStructs.Manga
 	for _, fetchedManga := range fetchedMangas {
