@@ -74,13 +74,13 @@ func FetchMangas(mangaTitle string) ([]mangaStructs.Manga, error) {
 	var mangaListWithChapters []mangaStructs.Manga
 	for _, fetchedManga := range fetchedMangas {
 		chapterParams := url.Values{}
-		//languages := []string{"en"}
+		languages := []string{"en"}
 
 		chapterParams.Add("order[chapter]", "asc")
 		chapterParams.Add("limit", "500")
-		//for _, language := range languages {
-		//	chapterParams.Add("translatedLanguage[]", language)
-		//}
+		for _, language := range languages {
+			chapterParams.Add("translatedLanguage[]", language)
+		}
 
 		// Limit refers to the limit of the amount of chapters set in url query default = 100
 		manga, err := AddChaptersToManga(fetchedManga, chapterParams, 500)
@@ -131,7 +131,6 @@ func AddChaptersToManga(manga mangaStructs.Manga, params url.Values, limit int) 
 }
 
 func GetChaptersFromManga(manga mangaStructs.Manga, params url.Values) ([]mangaStructs.Chapter, error) {
-
 	var chapters []mangaStructs.Chapter
 
 	body, err := RequestToJsonBytes(MangaDexUrl+"/manga/"+manga.ID+"/feed", params)
@@ -164,7 +163,7 @@ func GetChaptersFromManga(manga mangaStructs.Manga, params url.Values) ([]mangaS
 			ID:             chapterData.ID,
 			Manga:          manga,
 			Title:          chapterData.Attributes.Title,
-			ChapterNumber:  float32(chapterNumber),
+			ChapterNumber:  chapterNumber,
 			Cover:          mangaStructs.Cover{},
 			RelationsShips: relationShips,
 		}
