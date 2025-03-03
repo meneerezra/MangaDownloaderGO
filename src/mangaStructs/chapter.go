@@ -8,7 +8,7 @@ type Chapter struct {
 	ID             string
 	Manga          Manga
 	Title          string
-	ChapterNumber  float32
+	ChapterNumber  float64
 	Cover          Cover
 	RelationsShips []ChapterRelationship
 }
