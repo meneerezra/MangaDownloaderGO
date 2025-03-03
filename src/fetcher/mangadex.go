@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"mangaDownloaderGO/mangaStructs"
+	"mangaDownloaderGO/models"
 	"net/http"
 	"net/url"
 	"os"
@@ -44,7 +44,7 @@ func RequestToJsonBytes(urlString string, params url.Values) ([]byte, error) {
 }
 
 // FetchMangas This returns a list of all manga's that were found based on the title given
-func FetchMangas(mangaTitle string) ([]mangaStructs.Manga, error) {
+func FetchMangas(mangaTitle string) ([]models.Manga, error) {
 	MangaDexUrl := os.Getenv("MANGADEX_URL")
 
 	params := url.Values{}
@@ -54,15 +54,15 @@ func FetchMangas(mangaTitle string) ([]mangaStructs.Manga, error) {
 		panic(err)
 	}
 
-	var fetchedMangas []mangaStructs.Manga
-	var mangadexResponse mangaStructs.MangaDexMangaResponse
+	var fetchedMangas []models.Manga
+	var mangadexResponse models.MangaDexMangaResponse
 	if err := json.Unmarshal(body, &mangadexResponse); err != nil {
 		return nil, err
 	}
 
 	for _, manga := range mangadexResponse.Data {
-		var chapters []mangaStructs.Chapter
-		mangaObject := mangaStructs.Manga{
+		var chapters []models.Chapter
+		mangaObject := models.Manga{
 			ID:           manga.ID,
 			MangaTitle:   manga.Attributes.Title["en"],
 			Chapters:     chapters,
@@ -71,7 +71,7 @@ func FetchMangas(mangaTitle string) ([]mangaStructs.Manga, error) {
 		fetchedMangas = append(fetchedMangas, mangaObject)
 	}
 
-	var mangaListWithChapters []mangaStructs.Manga
+	var mangaListWithChapters []models.Manga
 	for _, fetchedManga := range fetchedMangas {
 		chapterParams := url.Values{}
 		languages := []string{"en"}
@@ -93,15 +93,15 @@ func FetchMangas(mangaTitle string) ([]mangaStructs.Manga, error) {
 	return mangaListWithChapters, nil
 }
 
-func DownloadManga(manga mangaStructs.Manga) {
+func DownloadManga(manga models.Manga) {
 
 }
 
-func DownloadChapter(chapter mangaStructs.Chapter) {
+func DownloadChapter(chapter models.Chapter) {
 
 }
 
-func AddChaptersToManga(manga mangaStructs.Manga, params url.Values, limit int) (mangaStructs.Manga, error) {
+func AddChaptersToManga(manga models.Manga, params url.Values, limit int) (models.Manga, error) {
 	chapters, err := GetChaptersFromManga(manga, params)
 	if err != nil {
 		return manga, err
@@ -130,24 +130,24 @@ func AddChaptersToManga(manga mangaStructs.Manga, params url.Values, limit int) 
 	return manga, nil
 }
 
-func GetChaptersFromManga(manga mangaStructs.Manga, params url.Values) ([]mangaStructs.Chapter, error) {
-	var chapters []mangaStructs.Chapter
+func GetChaptersFromManga(manga models.Manga, params url.Values) ([]models.Chapter, error) {
+	var chapters []models.Chapter
 
 	body, err := RequestToJsonBytes(MangaDexUrl+"/manga/"+manga.ID+"/feed", params)
 	if err != nil {
 		panic(err)
 	}
 
-	var mangadexResponse mangaStructs.MangaDexChapterResponse
+	var mangadexResponse models.MangaDexChapterResponse
 
 	if err := json.Unmarshal(body, &mangadexResponse); err != nil {
 		return nil, err
 	}
 
 	for _, chapterData := range mangadexResponse.Data {
-		var relationShips []mangaStructs.ChapterRelationship
+		var relationShips []models.ChapterRelationship
 		for _, relationShip := range chapterData.Relationships {
-			relationShips = append(relationShips, mangaStructs.ChapterRelationship{
+			relationShips = append(relationShips, models.ChapterRelationship{
 				ID:   relationShip.ID,
 				Type: relationShip.Type,
 			})
@@ -159,12 +159,12 @@ func GetChaptersFromManga(manga mangaStructs.Manga, params url.Values) ([]mangaS
 			fmt.Println("[Warning] Could not parse chapter:", err.Error())
 		}
 
-		chapter := mangaStructs.Chapter{
+		chapter := models.Chapter{
 			ID:             chapterData.ID,
 			Manga:          manga,
 			Title:          chapterData.Attributes.Title,
 			ChapterNumber:  chapterNumber,
-			Cover:          mangaStructs.Cover{},
+			Cover:          models.Cover{},
 			RelationsShips: relationShips,
 		}
 

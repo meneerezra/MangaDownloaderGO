@@ -1,4 +1,4 @@
-package mangaStructs
+package models
 
 type MangaDexMangaResponse struct {
 	Data []MangaDexMangaDataItem `json:"data"`

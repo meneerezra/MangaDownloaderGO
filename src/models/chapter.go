@@ -1,4 +1,4 @@
-package mangaStructs
+package models
 
 type Cover struct {
 	ID string
