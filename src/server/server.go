@@ -13,5 +13,8 @@ func StartServer(router *gin.Engine) {
 		c.HTML(http.StatusOK, "index.html", nil)
 	})
 
-	router.Run(":80")
+	err := router.Run(":80")
+	if err != nil {
+		return 
+	}
 }

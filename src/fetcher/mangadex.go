@@ -9,6 +9,7 @@ import (
 	"net/url"
 	"os"
 	"strconv"
+	"time"
 )
 
 var MangaDexUrl string
@@ -29,7 +30,6 @@ func RequestToJsonBytes(urlString string, params url.Values) ([]byte, error) {
 	fmt.Println(base.String())
 
 	resp, err := http.Get(base.String())
-
 	if err != nil {
 		panic(err)
 	}
@@ -74,13 +74,13 @@ func FetchMangas(mangaTitle string) ([]models.Manga, error) {
 	var mangaListWithChapters []models.Manga
 	for _, fetchedManga := range fetchedMangas {
 		chapterParams := url.Values{}
-		languages := []string{"en"}
+		//languages := []string{"en"}
 
 		chapterParams.Add("order[chapter]", "asc")
 		chapterParams.Add("limit", "500")
-		for _, language := range languages {
-			chapterParams.Add("translatedLanguage[]", language)
-		}
+		//for _, language := range languages {
+		//	chapterParams.Add("translatedLanguage[]", language)
+		//}
 
 		// Limit refers to the limit of the amount of chapters set in url query default = 100
 		manga, err := AddChaptersToManga(fetchedManga, chapterParams, 500)
@@ -135,13 +135,15 @@ func GetChaptersFromManga(manga models.Manga, params url.Values) ([]models.Chapt
 
 	body, err := RequestToJsonBytes(MangaDexUrl+"/manga/"+manga.ID+"/feed", params)
 	if err != nil {
+		fmt.Println("error here")
 		panic(err)
 	}
 
 	var mangadexResponse models.MangaDexChapterResponse
 
 	if err := json.Unmarshal(body, &mangadexResponse); err != nil {
-		return nil, err
+		HandleRatelimit()
+		return GetChaptersFromManga(manga, params)
 	}
 
 	for _, chapterData := range mangadexResponse.Data {
@@ -172,4 +174,10 @@ func GetChaptersFromManga(manga models.Manga, params url.Values) ([]models.Chapt
 	}
 
 	return chapters, nil
+}
+
+func HandleRatelimit() {
+	rateLimitTimer := time.NewTimer(30 * time.Second)
+	fmt.Println("[Warning] Rate limit hit starting 30s timer")
+	<- rateLimitTimer.C
 }
