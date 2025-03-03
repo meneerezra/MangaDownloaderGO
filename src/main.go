@@ -29,6 +29,9 @@ func main() {
 	for _, manga := range fetchedMangas {
 		fmt.Println("Manga:", manga.MangaTitle)
 		fmt.Println("Chapter count:", manga.ChapterCount)
+		for _, chapter := range manga.Chapters {
+			fmt.Printf("%v : %v\n", chapter.ChapterNumber, chapter.Title)
+		}
 	}
 
 }
