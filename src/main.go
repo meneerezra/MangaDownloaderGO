@@ -2,8 +2,10 @@ package main
 
 import (
 	"fmt"
+	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
 	"mangaDownloaderGO/fetcher"
+	"mangaDownloaderGO/server"
 	"os"
 )
 
@@ -15,8 +17,8 @@ func init() {
 }
 
 func main() {
-	//router := gin.Default()
-	//server.StartServer(router)
+	router := gin.Default()
+	server.StartServer(router)
 	fetcher.SetURL(os.Getenv("MANGADEX_URL"))
 
 	fetchedMangas, err := fetcher.FetchMangas(os.Args[1])
