@@ -4,17 +4,20 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log"
 	"mangaDownloaderGO/models"
 	"net/http"
 	"net/url"
+	"os"
+	"path/filepath"
 	"strconv"
 	"time"
 )
 
 var MangaDexUrl string
 
-func SetURL(url string) {
-	MangaDexUrl = url
+func SetURL(baseUrl string) {
+	MangaDexUrl = baseUrl
 }
 
 func RequestToJsonBytes(urlString string, params url.Values) ([]byte, error) {
@@ -71,13 +74,13 @@ func FetchMangas(mangaTitle string) ([]models.Manga, error) {
 	var mangaListWithChapters []models.Manga
 	for _, fetchedManga := range fetchedMangas {
 		chapterParams := url.Values{}
-		//languages := []string{"en"}
+		languages := []string{"en"}
 
 		chapterParams.Add("order[chapter]", "asc")
 		chapterParams.Add("limit", "500")
-		//for _, language := range languages {
-		//	chapterParams.Add("translatedLanguage[]", language)
-		//}
+		for _, language := range languages {
+			chapterParams.Add("translatedLanguage[]", language)
+		}
 
 		// Limit refers to the limit of the amount of chapters set in url query default = 100
 		manga, err := AddChaptersToManga(fetchedManga, chapterParams, 500)
@@ -90,14 +93,66 @@ func FetchMangas(mangaTitle string) ([]models.Manga, error) {
 	return mangaListWithChapters, nil
 }
 
-func DownloadManga(manga models.Manga) {
+func DownloadPages(chapterPNGs models.ChapterPNGs, chapter models.Chapter) {
 
+	chapterNumberInStr := strconv.FormatFloat(chapter.ChapterNumber, 'f', -1, 64)
+	path := filepath.Join(".", "manga", chapter.Manga.MangaTitle, chapterNumberInStr + "-" + chapter.Title)
 
+	for _, pngName := range chapterPNGs.PNGName {
+		url := chapterPNGs.BaseURL + "/data/" + chapterPNGs.Hash + "/" + pngName;
+		fmt.Println(url)
+		resp, err := http.Get(url)
+		if err != nil {
+			fmt.Println("[Error] While getting response:", err.Error())
+			return
+		}
+
+		defer resp.Body.Close()
+
+		err = os.MkdirAll(path, os.ModePerm)
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		newPath := filepath.Join(path, pngName)
+
+		file, err := os.Create(newPath)
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		defer file.Close()
+
+		_, err = io.Copy(file, resp.Body)
+		if err != nil {
+			log.Fatal(err)
+		}
+	}
+	fmt.Println("Done with chapter!")
 
 }
 
-func DownloadChapter(chapter models.Chapter) {
+func FetchPNGs(chapter models.Chapter) (models.ChapterPNGs, error) {
+	body, err := RequestToJsonBytes(MangaDexUrl + "/at-home/server/" + chapter.ID, url.Values{})
+	chapterPNGsObject := models.ChapterPNGs{}
+	if err != nil {
+		return chapterPNGsObject, err
+	}
 
+	var mangaDexDownloadResponse models.MangaDexDownloadResponse
+	if err := json.Unmarshal(body, &mangaDexDownloadResponse); err != nil {
+		return chapterPNGsObject, err
+	}
+
+	if mangaDexDownloadResponse.Result == "error" {
+		HandleRatelimit();
+		return FetchPNGs(chapter)
+	}
+	chapterPNGsObject.BaseURL = mangaDexDownloadResponse.BaseURL
+	chapterPNGsObject.PNGName = mangaDexDownloadResponse.Chapter.Data
+	chapterPNGsObject.Hash = mangaDexDownloadResponse.Chapter.Hash
+
+	return chapterPNGsObject, nil
 }
 
 func AddChaptersToManga(manga models.Manga, params url.Values, limit int) (models.Manga, error) {

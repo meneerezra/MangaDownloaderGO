@@ -2,10 +2,8 @@ package main
 
 import (
 	"fmt"
-	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
 	"mangaDownloaderGO/fetcher"
-	"mangaDownloaderGO/server"
 	"os"
 )
 
@@ -17,8 +15,8 @@ func init() {
 }
 
 func main() {
-	router := gin.Default()
-	server.StartServer(router)
+	//router := gin.Default()
+	//server.StartServer(router)
 	fetcher.SetURL(os.Getenv("MANGADEX_URL"))
 
 	fetchedMangas, err := fetcher.FetchMangas(os.Args[1])
@@ -34,6 +32,13 @@ func main() {
 		fmt.Println("True Chapter count:", len(manga.Chapters))
 		for i, chapter := range manga.Chapters {
 			fmt.Printf("%v : %v : %v\n", i, chapter.ChapterNumber, chapter.Title)
+			pngUrls, err := fetcher.FetchPNGs(chapter)
+			if err != nil {
+				fmt.Println("[Error] While fetching PNGUrls from chapter:", err.Error())
+				return
+			}
+			fetcher.DownloadPages(pngUrls, chapter)
+
 		}
 		fmt.Println("-----------------------------------------")
 	}

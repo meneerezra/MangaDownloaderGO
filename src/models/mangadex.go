@@ -36,3 +36,22 @@ type ChapterRelationShips struct {
 	ID   string `json:"id"`
 	Type string `json:"type"`
 }
+
+type MangaDexDownloadResponse struct {
+	Chapter ChapterDownloadResponse `json:"chapter"`
+	Result  string                  `json:"result"`
+	BaseURL string                  `json:"baseUrl"`
+	_       struct{}                `json:"-"`
+}
+
+type ChapterDownloadResponse struct {
+	Hash string   `json:"hash"`
+	Data []string `json:"data"`
+	_    struct{} `json:"-"`
+}
+
+type ChapterPNGs struct {
+	BaseURL string
+	Hash    string
+	PNGName []string
+}
