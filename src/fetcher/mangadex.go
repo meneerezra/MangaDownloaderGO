@@ -7,7 +7,6 @@ import (
 	"mangaDownloaderGO/models"
 	"net/http"
 	"net/url"
-	"os"
 	"strconv"
 	"time"
 )
@@ -45,8 +44,6 @@ func RequestToJsonBytes(urlString string, params url.Values) ([]byte, error) {
 
 // FetchMangas This returns a list of all manga's that were found based on the title given
 func FetchMangas(mangaTitle string) ([]models.Manga, error) {
-	MangaDexUrl := os.Getenv("MANGADEX_URL")
-
 	params := url.Values{}
 	params.Add("title", mangaTitle)
 	body, err := RequestToJsonBytes(MangaDexUrl+"/manga", params)
@@ -94,6 +91,8 @@ func FetchMangas(mangaTitle string) ([]models.Manga, error) {
 }
 
 func DownloadManga(manga models.Manga) {
+
+
 
 }
 
