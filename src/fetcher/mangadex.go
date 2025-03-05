@@ -46,7 +46,7 @@ func RequestToJsonBytes(urlString string, params url.Values) ([]byte, error) {
 }
 
 // FetchMangas This returns a list of all manga's that were found based on the title given
-func FetchMangas(mangaTitle string) ([]models.Manga, error) {
+func FetchMangas(mangaTitle string) ([]*Manga, error) {
 	params := url.Values{}
 	params.Add("title", mangaTitle)
 	body, err := RequestToJsonBytes(MangaDexUrl+"/manga", params)
@@ -54,24 +54,23 @@ func FetchMangas(mangaTitle string) ([]models.Manga, error) {
 		return nil, fmt.Errorf("Error while requesting JSON: %w", err)
 	}
 
-	var fetchedMangas []models.Manga
+	var fetchedMangas []*Manga
 	var mangadexResponse models.MangaDexMangaResponse
 	if err := json.Unmarshal(body, &mangadexResponse); err != nil {
 		return nil, fmt.Errorf("Error while deserializing JSON from mangadex: %w", err)
 	}
 
 	for _, manga := range mangadexResponse.Data {
-		var chapters []models.Chapter
-		mangaObject := models.Manga{
+		var chapters []Chapter
+		mangaObject := Manga{
 			ID:           manga.ID,
 			MangaTitle:   manga.Attributes.Title["en"],
 			Chapters:     chapters,
 			ChapterCount: 0,
 		}
-		fetchedMangas = append(fetchedMangas, mangaObject)
+		fetchedMangas = append(fetchedMangas, &mangaObject)
 	}
 
-	var mangaListWithChapters []models.Manga
 	for _, fetchedManga := range fetchedMangas {
 		chapterParams := url.Values{}
 		languages := []string{"en"}
@@ -83,24 +82,23 @@ func FetchMangas(mangaTitle string) ([]models.Manga, error) {
 		}
 
 		// Limit refers to the limit of the amount of chapters set in url query default = 100
-		manga, err := AddChaptersToManga(fetchedManga, chapterParams, 500)
+		err := fetchedManga.AddChaptersToManga(chapterParams, 500)
 		if err != nil {
 			return nil, fmt.Errorf("Error while adding chapters to manga: %w", err)
 		}
-		mangaListWithChapters = append(mangaListWithChapters, manga)
 	}
 
-	return mangaListWithChapters, nil
+	return fetchedMangas, nil
 }
 
-func DownloadPages(chapterPNGs models.ChapterPNGs, chapter models.Chapter) error {
+func DownloadPages(chapterPNGs models.ChapterPNGs, chapter Chapter) error {
 
 	path := filepath.Join(".", "manga", chapter.Manga.MangaTitle)
 
 	var chapterPathFiles []string
 
 	for _, pngName := range chapterPNGs.PNGName {
-		url := chapterPNGs.BaseURL + "/data/" + chapterPNGs.Hash + "/" + pngName;
+		url := chapterPNGs.BaseURL + "/data/" + chapterPNGs.Hash + "/" + pngName
 		resp, err := http.Get(url)
 		if err != nil {
 			return fmt.Errorf("Error while getting response: %w", err)
@@ -188,103 +186,6 @@ func CompressPNGs(chapterPathFiles []string, cbzPath string) error {
 
 	fmt.Println("Zip created succefully " + cbzPath)
 	return nil
-}
-
-func FetchPNGs(chapter models.Chapter) (models.ChapterPNGs, error) {
-	chapterPNGsObject := models.ChapterPNGs{}
-	body, err := RequestToJsonBytes(MangaDexUrl + "/at-home/server/" + chapter.ID, url.Values{})
-	if err != nil {
-		return chapterPNGsObject, fmt.Errorf("Error while requesting: %w", err)
-	}
-
-	var mangaDexDownloadResponse models.MangaDexDownloadResponse
-	if err := json.Unmarshal(body, &mangaDexDownloadResponse); err != nil {
-		return chapterPNGsObject, fmt.Errorf("Error while deserializing JSON: %w", err)
-	}
-
-	if mangaDexDownloadResponse.Result == "error" {
-		HandleRatelimit();
-		return FetchPNGs(chapter)
-	}
-	chapterPNGsObject.BaseURL = mangaDexDownloadResponse.BaseURL
-	chapterPNGsObject.PNGName = mangaDexDownloadResponse.Chapter.Data
-	chapterPNGsObject.Hash = mangaDexDownloadResponse.Chapter.Hash
-
-	return chapterPNGsObject, nil
-}
-
-func AddChaptersToManga(manga models.Manga, params url.Values, limit int) (models.Manga, error) {
-	chapters, err := GetChaptersFromManga(manga, params)
-	if err != nil {
-		return manga, fmt.Errorf("Error requesting chapters: %w", err)
-	}
-
-	chapterCount := len(chapters)
-
-	manga.ChapterCount += chapterCount
-	manga.Chapters = append(manga.Chapters, chapters...)
-
-	if chapterCount >= limit {
-		offset := limit
-		if params.Has("offset") {
-			offsetFromJSON, err := strconv.Atoi(params.Get("offset"))
-			if err != nil {
-				return manga, fmt.Errorf("Error while getting 'offset' from paramaters: %w", err)
-			}
-
-			offset = offsetFromJSON + limit
-		}
-
-		params.Set("offset", strconv.Itoa(offset))
-		return AddChaptersToManga(manga, params, limit)
-	}
-
-	return manga, nil
-}
-
-func GetChaptersFromManga(manga models.Manga, params url.Values) ([]models.Chapter, error) {
-	var chapters []models.Chapter
-
-	body, err := RequestToJsonBytes(MangaDexUrl+"/manga/"+manga.ID+"/feed", params)
-	if err != nil {
-		return nil, fmt.Errorf("Error while doing a get request: %w", err)
-	}
-
-	var mangadexResponse models.MangaDexChapterResponse
-
-	if err := json.Unmarshal(body, &mangadexResponse); err != nil {
-		HandleRatelimit()
-		return GetChaptersFromManga(manga, params)
-	}
-
-	for _, chapterData := range mangadexResponse.Data {
-		var relationShips []models.ChapterRelationship
-		for _, relationShip := range chapterData.Relationships {
-			relationShips = append(relationShips, models.ChapterRelationship{
-				ID:   relationShip.ID,
-				Type: relationShip.Type,
-			})
-		}
-
-		chapterNumber, err := strconv.ParseFloat(chapterData.Attributes.Chapter, 32)
-		// Sometimes a manga has no chapters and their value is null in the json and errors but go still converts it to 0 this is to filter out console spam
-		if err != nil && chapterData.Attributes.Chapter != "" {
-			fmt.Println("[Warning] Could not parse chapter:", err.Error())
-		}
-
-		chapter := models.Chapter{
-			ID:             chapterData.ID,
-			Manga:          manga,
-			Title:          chapterData.Attributes.Title,
-			ChapterNumber:  chapterNumber,
-			Cover:          models.Cover{},
-			RelationsShips: relationShips,
-		}
-
-		chapters = append(chapters, chapter)
-	}
-
-	return chapters, nil
 }
 
 func HandleRatelimit() {

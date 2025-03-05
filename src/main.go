@@ -32,7 +32,7 @@ func main() {
 		fmt.Println("True Chapter count:", len(manga.Chapters))
 		for i, chapter := range manga.Chapters {
 			fmt.Printf("%v : %v : %v\n", i, chapter.ChapterNumber, chapter.Title)
-			pngUrls, err := fetcher.FetchPNGs(chapter)
+			pngUrls, err := chapter.FetchPNGs()
 			if err != nil {
 				fmt.Println("[Error] While fetching PNGUrls from chapter:", err.Error())
 				return
