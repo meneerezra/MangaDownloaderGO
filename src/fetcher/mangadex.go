@@ -101,7 +101,6 @@ func DownloadPages(chapterPNGs models.ChapterPNGs, chapter models.Chapter) error
 
 	for _, pngName := range chapterPNGs.PNGName {
 		url := chapterPNGs.BaseURL + "/data/" + chapterPNGs.Hash + "/" + pngName;
-		fmt.Println(url)
 		resp, err := http.Get(url)
 		if err != nil {
 			return fmt.Errorf("Error while getting response: %w", err)
@@ -131,7 +130,7 @@ func DownloadPages(chapterPNGs models.ChapterPNGs, chapter models.Chapter) error
 	}
 	chapterNumberInStr := strconv.FormatFloat(chapter.ChapterNumber, 'f', -1, 64)
 
-	zipPath := filepath.Join(path, chapterNumberInStr + "-" + chapter.Title + ".cbz")
+	zipPath := filepath.Join(path, "Chapter " + chapterNumberInStr + "_ " + chapter.Manga.MangaTitle + ".cbz")
 
 	err := CompressPNGs(chapterPathFiles, zipPath)
 	if err != nil {
