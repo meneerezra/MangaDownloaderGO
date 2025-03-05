@@ -3,7 +3,7 @@ package fetcher
 import (
 	"encoding/json"
 	"fmt"
-	"mangaDownloaderGO/models"
+	"mangaDownloaderGO/fetcher/jsonModels"
 	"net/url"
 	"strconv"
 )
@@ -52,7 +52,7 @@ func (manga Manga) GetChaptersFromMangaDex(params url.Values) ([]Chapter, error)
 		return nil, fmt.Errorf("Error while doing a get request: %w", err)
 	}
 
-	var mangadexResponse models.MangaDexChapterResponse
+	var mangadexResponse jsonModels.MangaDexChapterResponse
 
 	if err := json.Unmarshal(body, &mangadexResponse); err != nil {
 		HandleRatelimit()

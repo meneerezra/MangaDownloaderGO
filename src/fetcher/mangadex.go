@@ -5,12 +5,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"mangaDownloaderGO/models"
+	"mangaDownloaderGO/fetcher/jsonModels"
 	"net/http"
 	"net/url"
 	"os"
-	"path/filepath"
-	"strconv"
 	"time"
 )
 
@@ -55,7 +53,7 @@ func FetchMangas(mangaTitle string) ([]*Manga, error) {
 	}
 
 	var fetchedMangas []*Manga
-	var mangadexResponse models.MangaDexMangaResponse
+	var mangadexResponse jsonModels.MangaDexMangaResponse
 	if err := json.Unmarshal(body, &mangadexResponse); err != nil {
 		return nil, fmt.Errorf("Error while deserializing JSON from mangadex: %w", err)
 	}
@@ -89,54 +87,6 @@ func FetchMangas(mangaTitle string) ([]*Manga, error) {
 	}
 
 	return fetchedMangas, nil
-}
-
-func DownloadPages(chapterPNGs models.ChapterPNGs, chapter Chapter) error {
-
-	path := filepath.Join(".", "manga", chapter.Manga.MangaTitle)
-
-	var chapterPathFiles []string
-
-	for _, pngName := range chapterPNGs.PNGName {
-		url := chapterPNGs.BaseURL + "/data/" + chapterPNGs.Hash + "/" + pngName
-		resp, err := http.Get(url)
-		if err != nil {
-			return fmt.Errorf("Error while getting response: %w", err)
-		}
-
-		defer resp.Body.Close()
-
-		err = os.MkdirAll(path, os.ModePerm)
-		if err != nil {
-			return fmt.Errorf("Error while making directories: %w", err)
-		}
-
-		pathToFile := filepath.Join(path, pngName)
-
-		file, err := os.Create(pathToFile)
-		if err != nil {
-			return fmt.Errorf("Error creating file: %w", err)
-		}
-
-		defer file.Close()
-
-		_, err = io.Copy(file, resp.Body)
-		if err != nil {
-			return fmt.Errorf("Error copying contents to file: %w", err)
-		}
-		chapterPathFiles = append(chapterPathFiles, pathToFile)
-	}
-	chapterNumberInStr := strconv.FormatFloat(chapter.ChapterNumber, 'f', -1, 64)
-
-	zipPath := filepath.Join(path, "Chapter " + chapterNumberInStr + "_ " + chapter.Manga.MangaTitle + ".cbz")
-
-	err := CompressPNGs(chapterPathFiles, zipPath)
-	if err != nil {
-		return fmt.Errorf("Error compressing PNG's to cbz: %w", err)
-	}
-
-	fmt.Println("Done with chapter!")
-	return nil
 }
 
 func CompressPNGs(chapterPathFiles []string, cbzPath string) error {
