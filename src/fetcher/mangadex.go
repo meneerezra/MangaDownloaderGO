@@ -1,6 +1,7 @@
 package fetcher
 
 import (
+	"archive/zip"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -94,8 +95,7 @@ func FetchMangas(mangaTitle string) ([]models.Manga, error) {
 
 func DownloadPages(chapterPNGs models.ChapterPNGs, chapter models.Chapter) error {
 
-	chapterNumberInStr := strconv.FormatFloat(chapter.ChapterNumber, 'f', -1, 64)
-	path := filepath.Join(".", "manga", chapter.Manga.MangaTitle, chapterNumberInStr + "-" + chapter.Title)
+	path := filepath.Join(".", "manga", chapter.Manga.MangaTitle)
 
 	var chapterPathFiles []string
 
@@ -129,21 +129,67 @@ func DownloadPages(chapterPNGs models.ChapterPNGs, chapter models.Chapter) error
 		}
 		chapterPathFiles = append(chapterPathFiles, pathToFile)
 	}
+	chapterNumberInStr := strconv.FormatFloat(chapter.ChapterNumber, 'f', -1, 64)
 
-	//err := CompressPNGs(chapterPathFiles)
-	//if err != nil {
-	//	return fmt.Errorf("Error compressing PNG's to cbz: %w", err)
-	//}
+	zipPath := filepath.Join(path, chapterNumberInStr + "-" + chapter.Title + ".cbz")
+
+	err := CompressPNGs(chapterPathFiles, zipPath)
+	if err != nil {
+		return fmt.Errorf("Error compressing PNG's to cbz: %w", err)
+	}
 
 	fmt.Println("Done with chapter!")
 	return nil
 }
 
-//func CompressPNGs(chapterPathFiles []string) error {
-//	for _, file := range chapterPathFiles {
-//
-//	}
-//}
+func CompressPNGs(chapterPathFiles []string, cbzPath string) error {
+	zipFile, err := os.Create(cbzPath)
+	if err != nil {
+		return fmt.Errorf("Error while creating zipfile: %w", err)
+	}
+	defer zipFile.Close()
+
+	zipWriter := zip.NewWriter(zipFile)
+	defer zipWriter.Close()
+
+
+	for _, file := range chapterPathFiles {
+		fileToCbz, err := os.Open(file)
+		if err != nil {
+			return fmt.Errorf("Error while opening file: %w", err)
+		}
+		defer fileToCbz.Close()
+
+		fileInfo, err := fileToCbz.Stat()
+		if err != nil {
+			return fmt.Errorf("Error while getting file info: %w", err)
+		}
+
+		header, err := zip.FileInfoHeader(fileInfo)
+		if err != nil {
+			return fmt.Errorf("Error while heading file: %w", err)
+		}
+
+		header.Name = file
+
+		writer, err := zipWriter.CreateHeader(header)
+		if err != nil {
+			return fmt.Errorf("Error while creating writer: %w", err)
+		}
+		_, err = io.Copy(writer, fileToCbz)
+		if err != nil {
+			return fmt.Errorf("Error while copying files into zip: %w", err)
+		}
+
+		err = os.Remove(file)
+		if err != nil {
+			return fmt.Errorf("Error while deleting file: %w", err)
+		}
+	}
+
+	fmt.Println("Zip created succefully " + cbzPath)
+	return nil
+}
 
 func FetchPNGs(chapter models.Chapter) (models.ChapterPNGs, error) {
 	chapterPNGsObject := models.ChapterPNGs{}
