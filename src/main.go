@@ -37,7 +37,11 @@ func main() {
 				fmt.Println("[Error] While fetching PNGUrls from chapter:", err.Error())
 				return
 			}
-			fetcher.DownloadPages(pngUrls, chapter)
+			err = fetcher.DownloadPages(pngUrls, chapter)
+			if err != nil {
+				fmt.Println("[Error] While downloading pages:", err.Error())
+				return 
+			}
 
 		}
 		fmt.Println("-----------------------------------------")
