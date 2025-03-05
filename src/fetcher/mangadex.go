@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"log"
 	"mangaDownloaderGO/models"
 	"net/http"
 	"net/url"
@@ -23,7 +22,7 @@ func SetURL(baseUrl string) {
 func RequestToJsonBytes(urlString string, params url.Values) ([]byte, error) {
 	base, err := url.Parse(urlString)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("Error while parsing URL: %w", err)
 	}
 
 	base.RawQuery = params.Encode()
@@ -33,13 +32,13 @@ func RequestToJsonBytes(urlString string, params url.Values) ([]byte, error) {
 
 	resp, err := http.Get(base.String())
 	if err != nil {
-		panic(err)
+		return nil, fmt.Errorf("Error while sending request: %w", err)
 	}
 
 	defer resp.Body.Close()
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("Error while reading body from request: %w", err)
 	}
 
 	return body, nil
@@ -51,13 +50,13 @@ func FetchMangas(mangaTitle string) ([]models.Manga, error) {
 	params.Add("title", mangaTitle)
 	body, err := RequestToJsonBytes(MangaDexUrl+"/manga", params)
 	if err != nil {
-		panic(err)
+		return nil, fmt.Errorf("Error while requesting JSON: %w", err)
 	}
 
 	var fetchedMangas []models.Manga
 	var mangadexResponse models.MangaDexMangaResponse
 	if err := json.Unmarshal(body, &mangadexResponse); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("Error while deserializing JSON from mangadex: %w", err)
 	}
 
 	for _, manga := range mangadexResponse.Data {
@@ -85,7 +84,7 @@ func FetchMangas(mangaTitle string) ([]models.Manga, error) {
 		// Limit refers to the limit of the amount of chapters set in url query default = 100
 		manga, err := AddChaptersToManga(fetchedManga, chapterParams, 500)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("Error while adding chapters to manga: %w", err)
 		}
 		mangaListWithChapters = append(mangaListWithChapters, manga)
 	}
@@ -93,55 +92,69 @@ func FetchMangas(mangaTitle string) ([]models.Manga, error) {
 	return mangaListWithChapters, nil
 }
 
-func DownloadPages(chapterPNGs models.ChapterPNGs, chapter models.Chapter) {
+func DownloadPages(chapterPNGs models.ChapterPNGs, chapter models.Chapter) error {
 
 	chapterNumberInStr := strconv.FormatFloat(chapter.ChapterNumber, 'f', -1, 64)
 	path := filepath.Join(".", "manga", chapter.Manga.MangaTitle, chapterNumberInStr + "-" + chapter.Title)
+
+	var chapterPathFiles []string
 
 	for _, pngName := range chapterPNGs.PNGName {
 		url := chapterPNGs.BaseURL + "/data/" + chapterPNGs.Hash + "/" + pngName;
 		fmt.Println(url)
 		resp, err := http.Get(url)
 		if err != nil {
-			fmt.Println("[Error] While getting response:", err.Error())
-			return
+			return fmt.Errorf("Error while getting response: %w", err)
 		}
 
 		defer resp.Body.Close()
 
 		err = os.MkdirAll(path, os.ModePerm)
 		if err != nil {
-			log.Fatal(err)
+			return fmt.Errorf("Error while making directories: %w", err)
 		}
 
-		newPath := filepath.Join(path, pngName)
+		pathToFile := filepath.Join(path, pngName)
 
-		file, err := os.Create(newPath)
+		file, err := os.Create(pathToFile)
 		if err != nil {
-			log.Fatal(err)
+			return fmt.Errorf("Error creating file: %w", err)
 		}
 
 		defer file.Close()
 
 		_, err = io.Copy(file, resp.Body)
 		if err != nil {
-			log.Fatal(err)
+			return fmt.Errorf("Error copying contents to file: %w", err)
 		}
+		chapterPathFiles = append(chapterPathFiles, pathToFile)
 	}
-	fmt.Println("Done with chapter!")
 
+	//err := CompressPNGs(chapterPathFiles)
+	//if err != nil {
+	//	return fmt.Errorf("Error compressing PNG's to cbz: %w", err)
+	//}
+
+	fmt.Println("Done with chapter!")
+	return nil
 }
 
+//func CompressPNGs(chapterPathFiles []string) error {
+//	for _, file := range chapterPathFiles {
+//
+//	}
+//}
+
 func FetchPNGs(chapter models.Chapter) (models.ChapterPNGs, error) {
-	body, err := RequestToJsonBytes(MangaDexUrl + "/at-home/server/" + chapter.ID, url.Values{})
 	chapterPNGsObject := models.ChapterPNGs{}
+	body, err := RequestToJsonBytes(MangaDexUrl + "/at-home/server/" + chapter.ID, url.Values{})
 	if err != nil {
-		return chapterPNGsObject, err
+		return chapterPNGsObject, fmt.Errorf("Error while requesting: %w", err)
 	}
 
 	var mangaDexDownloadResponse models.MangaDexDownloadResponse
 	if err := json.Unmarshal(body, &mangaDexDownloadResponse); err != nil {
-		return chapterPNGsObject, err
+		return chapterPNGsObject, fmt.Errorf("Error while deserializing JSON: %w", err)
 	}
 
 	if mangaDexDownloadResponse.Result == "error" {
@@ -158,7 +171,7 @@ func FetchPNGs(chapter models.Chapter) (models.ChapterPNGs, error) {
 func AddChaptersToManga(manga models.Manga, params url.Values, limit int) (models.Manga, error) {
 	chapters, err := GetChaptersFromManga(manga, params)
 	if err != nil {
-		return manga, err
+		return manga, fmt.Errorf("Error requesting chapters: %w", err)
 	}
 
 	chapterCount := len(chapters)
@@ -171,7 +184,7 @@ func AddChaptersToManga(manga models.Manga, params url.Values, limit int) (model
 		if params.Has("offset") {
 			offsetFromJSON, err := strconv.Atoi(params.Get("offset"))
 			if err != nil {
-				return manga, err
+				return manga, fmt.Errorf("Error while getting 'offset' from paramaters: %w", err)
 			}
 
 			offset = offsetFromJSON + limit
@@ -189,8 +202,7 @@ func GetChaptersFromManga(manga models.Manga, params url.Values) ([]models.Chapt
 
 	body, err := RequestToJsonBytes(MangaDexUrl+"/manga/"+manga.ID+"/feed", params)
 	if err != nil {
-		fmt.Println("error here")
-		panic(err)
+		return nil, fmt.Errorf("Error while doing a get request: %w", err)
 	}
 
 	var mangadexResponse models.MangaDexChapterResponse
