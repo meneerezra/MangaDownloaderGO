@@ -135,11 +135,11 @@ func CompressImages(chapterPathFiles []string, cbzPath string, chapter Chapter) 
 
 		err = os.Remove(file)
 		if err != nil {
-			return fmt.Errorf("Error while deleting file: %w", err)
+			fmt.Println("[Warning] could not delete file: %w", err)
 		}
 	}
 
-	fmt.Println("Zip created succefully " + cbzPath)
+	fmt.Println("Cbz created succefully " + cbzPath)
 	return nil
 }
 
