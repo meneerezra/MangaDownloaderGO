@@ -54,6 +54,7 @@ func (manga Manga) GetChaptersFromMangaDex(params url.Values) ([]Chapter, error)
 
 	var mangadexResponse jsonModels.MangaDexChapterResponse
 
+	// Mangadex (or cloudflare im not sure) sends a html page here when ratelimit is reached
 	if err := json.Unmarshal(body, &mangadexResponse); err != nil {
 		HandleRatelimit()
 		return manga.GetChaptersFromMangaDex(params)
