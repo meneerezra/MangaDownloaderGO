@@ -35,12 +35,11 @@ func main() {
 			fmt.Printf("%v : %v : %v\n", i, chapter.ChapterNumber, chapter.Title)
 			pngUrls, err := chapter.FetchImages()
 			if err != nil {
-				fmt.Println("[Error] While fetching PNGUrls from chapter:", err.Error())
-				return
+				panic("[Error] While fetching PNGUrls from chapter: " + err.Error())
 			}
 
-			path := filepath.Join(".", "tmp", chapter.Manga.MangaTitle)
-			cbzPath := filepath.Join(".", "manga", chapter.Manga.MangaTitle)
+			path := filepath.Join("..", "downloads", "tmp", chapter.Manga.MangaTitle)
+			cbzPath := filepath.Join("..", "downloads", "manga", chapter.Manga.MangaTitle)
 
 			err = os.MkdirAll(path, os.ModePerm)
 			if err != nil {
@@ -54,8 +53,7 @@ func main() {
 
 			err = chapter.DownloadPages(pngUrls, path, cbzPath)
 			if err != nil {
-				fmt.Println("[Error] While downloading pages:", err.Error())
-				return 
+				panic("[Error] While downloading pages: " + err.Error())
 			}
 
 		}

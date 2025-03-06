@@ -1,5 +1,5 @@
 .idea
 .env
 src/manga
-kavita/
-src/tmp
+downloads
+kavita
