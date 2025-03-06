@@ -9,7 +9,6 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
-	"strconv"
 )
 
 type Cover struct {
@@ -30,7 +29,7 @@ type ChapterRelationship struct {
 	Type string
 }
 
-func (chapter Chapter) FetchPNGs() (jsonModels.ChapterPNGs, error) {
+func (chapter Chapter) FetchImages() (jsonModels.ChapterPNGs, error) {
 	chapterPNGsObject := jsonModels.ChapterPNGs{}
 	body, err := RequestToJsonBytes(MangaDexUrl + "/at-home/server/" + chapter.ID, url.Values{})
 	if err != nil {
@@ -44,7 +43,7 @@ func (chapter Chapter) FetchPNGs() (jsonModels.ChapterPNGs, error) {
 
 	if mangaDexDownloadResponse.Result == "error" {
 		HandleRatelimit()
-		return chapter.FetchPNGs()
+		return chapter.FetchImages()
 	}
 	chapterPNGsObject.BaseURL = mangaDexDownloadResponse.BaseURL
 	chapterPNGsObject.PNGName = mangaDexDownloadResponse.Chapter.Data
@@ -53,9 +52,7 @@ func (chapter Chapter) FetchPNGs() (jsonModels.ChapterPNGs, error) {
 	return chapterPNGsObject, nil
 }
 
-func (chapter Chapter) DownloadPages(chapterPNGs jsonModels.ChapterPNGs) error {
-
-	path := filepath.Join(".", "manga", chapter.Manga.MangaTitle)
+func (chapter Chapter) DownloadPages(chapterPNGs jsonModels.ChapterPNGs, path string, cbzPath string) error {
 
 	var chapterPathFiles []string
 
@@ -68,14 +65,9 @@ func (chapter Chapter) DownloadPages(chapterPNGs jsonModels.ChapterPNGs) error {
 
 		defer resp.Body.Close()
 
-		err = os.MkdirAll(path, os.ModePerm)
-		if err != nil {
-			return fmt.Errorf("Error while making directories: %w", err)
-		}
+		pathToImage := filepath.Join(path, pngName)
 
-		pathToFile := filepath.Join(path, pngName)
-
-		file, err := os.Create(pathToFile)
+		file, err := os.Create(pathToImage)
 		if err != nil {
 			return fmt.Errorf("Error creating file: %w", err)
 		}
@@ -86,13 +78,10 @@ func (chapter Chapter) DownloadPages(chapterPNGs jsonModels.ChapterPNGs) error {
 		if err != nil {
 			return fmt.Errorf("Error copying contents to file: %w", err)
 		}
-		chapterPathFiles = append(chapterPathFiles, pathToFile)
+		chapterPathFiles = append(chapterPathFiles, pathToImage)
 	}
-	chapterNumberInStr := strconv.FormatFloat(chapter.ChapterNumber, 'f', -1, 64)
 
-	zipPath := filepath.Join(path, "Chapter " + chapterNumberInStr + "_ " + chapter.Manga.MangaTitle + ".cbz")
-
-	err := CompressPNGs(chapterPathFiles, zipPath)
+	err := CompressImages(chapterPathFiles, cbzPath, chapter)
 	if err != nil {
 		return fmt.Errorf("Error compressing PNG's to cbz: %w", err)
 	}

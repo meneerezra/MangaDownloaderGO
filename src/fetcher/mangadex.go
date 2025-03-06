@@ -9,6 +9,8 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"path/filepath"
+	"strconv"
 	"time"
 )
 
@@ -89,8 +91,11 @@ func FetchMangas(mangaTitle string) ([]*Manga, error) {
 	return fetchedMangas, nil
 }
 
-func CompressPNGs(chapterPathFiles []string, cbzPath string) error {
-	zipFile, err := os.Create(cbzPath)
+func CompressImages(chapterPathFiles []string, cbzPath string, chapter Chapter) error {
+	// Can't add float as an argument to filepath.Join() so convert it first
+	chapterNumberInStr := strconv.FormatFloat(chapter.ChapterNumber, 'f', -1, 64)
+	cbzPathWithChapter := filepath.Join(cbzPath, "Chapter " + chapterNumberInStr + "_ " + chapter.Manga.MangaTitle + ".cbz")
+	zipFile, err := os.Create(cbzPathWithChapter)
 	if err != nil {
 		return fmt.Errorf("Error while creating zipfile: %w", err)
 	}

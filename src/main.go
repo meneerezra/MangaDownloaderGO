@@ -5,6 +5,7 @@ import (
 	"github.com/joho/godotenv"
 	"mangaDownloaderGO/fetcher"
 	"os"
+	"path/filepath"
 )
 
 func init() {
@@ -32,12 +33,26 @@ func main() {
 		fmt.Println("True Chapter count:", len(manga.Chapters))
 		for i, chapter := range manga.Chapters {
 			fmt.Printf("%v : %v : %v\n", i, chapter.ChapterNumber, chapter.Title)
-			pngUrls, err := chapter.FetchPNGs()
+			pngUrls, err := chapter.FetchImages()
 			if err != nil {
 				fmt.Println("[Error] While fetching PNGUrls from chapter:", err.Error())
 				return
 			}
-			err = chapter.DownloadPages(pngUrls)
+
+			path := filepath.Join(".", "tmp", chapter.Manga.MangaTitle)
+			cbzPath := filepath.Join(".", "manga", chapter.Manga.MangaTitle)
+
+			err = os.MkdirAll(path, os.ModePerm)
+			if err != nil {
+				panic("Error while making directories: " + err.Error())
+			}
+
+			err = os.MkdirAll(cbzPath, os.ModePerm)
+			if err != nil {
+				panic("Error while making directories: " + err.Error())
+			}
+
+			err = chapter.DownloadPages(pngUrls, path, cbzPath)
 			if err != nil {
 				fmt.Println("[Error] While downloading pages:", err.Error())
 				return 
