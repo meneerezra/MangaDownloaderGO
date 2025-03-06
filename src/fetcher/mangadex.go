@@ -111,28 +111,34 @@ func CompressImages(chapterPathFiles []string, cbzPath string, chapter Chapter) 
 		if err != nil {
 			return fmt.Errorf("Error while opening file: %w", err)
 		}
-		defer fileToCbz.Close()
 
 		fileInfo, err := fileToCbz.Stat()
 		if err != nil {
+			fileToCbz.Close()
 			return fmt.Errorf("Error while getting file info: %w", err)
 		}
 
 		header, err := zip.FileInfoHeader(fileInfo)
 		if err != nil {
+			fileToCbz.Close()
 			return fmt.Errorf("Error while heading file: %w", err)
 		}
 
-		header.Name = file
+		header.Name = filepath.Base(file)
 
 		writer, err := zipWriter.CreateHeader(header)
 		if err != nil {
+			fileToCbz.Close()
 			return fmt.Errorf("Error while creating writer: %w", err)
 		}
+
 		_, err = io.Copy(writer, fileToCbz)
 		if err != nil {
+			fileToCbz.Close()
 			return fmt.Errorf("Error while copying files into zip: %w", err)
 		}
+
+		fileToCbz.Close()
 
 		err = os.Remove(file)
 		if err != nil {
@@ -140,7 +146,7 @@ func CompressImages(chapterPathFiles []string, cbzPath string, chapter Chapter) 
 		}
 	}
 
-	fmt.Println("Cbz created succefully " + cbzPath)
+	fmt.Println("Cbz created succefully " + cbzPathWithChapter)
 	return nil
 }
 

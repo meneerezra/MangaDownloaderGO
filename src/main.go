@@ -43,7 +43,7 @@ func main() {
 			fmt.Printf("%v : %v : %v\n", i, chapter.ChapterNumber, chapter.Title)
 			pngUrls, err := chapter.FetchImages()
 			if err != nil {
-				panic("[Error] While fetching PNGUrls from chapter: " + err.Error())
+				panic("[Error] While fetching image urls from chapter: " + err.Error())
 			}
 
 			path := filepath.Join("..", "downloads", "tmp", chapter.Manga.MangaTitle)
