@@ -94,7 +94,8 @@ func FetchMangas(mangaTitle string) ([]*Manga, error) {
 func CompressImages(chapterPathFiles []string, cbzPath string, chapter Chapter) error {
 	// Can't add float as an argument to filepath.Join() so convert it first
 	chapterNumberInStr := strconv.FormatFloat(chapter.ChapterNumber, 'f', -1, 64)
-	cbzPathWithChapter := filepath.Join(cbzPath, "Chapter " + chapterNumberInStr + "_ " + chapter.Manga.MangaTitle + ".cbz")
+	cbzPathWithChapter := filepath.Join(cbzPath,
+		"Chapter " + chapterNumberInStr + " " + chapter.Manga.MangaTitle + " " + chapter.ID + ".cbz")
 	zipFile, err := os.Create(cbzPathWithChapter)
 	if err != nil {
 		return fmt.Errorf("Error while creating zipfile: %w", err)
@@ -135,7 +136,7 @@ func CompressImages(chapterPathFiles []string, cbzPath string, chapter Chapter) 
 
 		err = os.Remove(file)
 		if err != nil {
-			fmt.Println("[Warning] could not delete file: %w", err)
+			fmt.Println("[Warning] could not delete file: ", err)
 		}
 	}
 
