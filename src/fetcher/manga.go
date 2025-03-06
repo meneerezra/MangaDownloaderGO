@@ -15,7 +15,7 @@ type Manga struct {
 	Chapters     []Chapter
 }
 
-func (manga *Manga) AddChaptersToManga(params url.Values, limit int) (error) {
+func (manga *Manga) AddChaptersToManga(params url.Values, limit int) error {
 	chapters, err := manga.GetChaptersFromMangaDex(params)
 	if err != nil {
 		return fmt.Errorf("Error requesting chapters: %w", err)

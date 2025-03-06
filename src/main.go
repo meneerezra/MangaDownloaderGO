@@ -11,12 +11,21 @@ import (
 func main() {
 	//router := gin.Default()
 	//server.StartServer(router)
-	configPath := filepath.Join("..")
+	configPath := filepath.Join("..", "config.yml")
+	if _, err := os.Open(configPath); err != nil {
+		downloadPath := filepath.Join("..", "downloads", "manga")
+		err := config.GenerateConfig(configPath, downloadPath)
+		if err != nil {
+			panic(err)
+		}
+	}
+
 	configFile, err := config.LoadConfig(configPath)
 	if err != nil {
 		panic(err)
 	}
 
+	downloadPath := configFile.DownloadPath
 	fetcher.SetURL(configFile.MangaDexUrl)
 
 	fetchedMangas, err := fetcher.FetchMangas(os.Args[1])
@@ -38,7 +47,7 @@ func main() {
 			}
 
 			path := filepath.Join("..", "downloads", "tmp", chapter.Manga.MangaTitle)
-			cbzPath := filepath.Join("..", "downloads", "manga", chapter.Manga.MangaTitle)
+			cbzPath := filepath.Join(downloadPath, chapter.Manga.MangaTitle)
 
 			err = os.MkdirAll(path, os.ModePerm)
 			if err != nil {
