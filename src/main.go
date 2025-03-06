@@ -2,23 +2,22 @@ package main
 
 import (
 	"fmt"
-	"github.com/joho/godotenv"
+	"mangaDownloaderGO/config"
 	"mangaDownloaderGO/fetcher"
 	"os"
 	"path/filepath"
 )
 
-func init() {
-	err := godotenv.Load("../.env")
-	if err != nil {
-		panic("Could not load .env: " + err.Error())
-	}
-}
-
 func main() {
 	//router := gin.Default()
 	//server.StartServer(router)
-	fetcher.SetURL(os.Getenv("MANGADEX_URL"))
+	configPath := filepath.Join("..")
+	configFile, err := config.LoadConfig(configPath)
+	if err != nil {
+		panic(err)
+	}
+
+	fetcher.SetURL(configFile.MangaDexUrl)
 
 	fetchedMangas, err := fetcher.FetchMangas(os.Args[1])
 
@@ -31,8 +30,8 @@ func main() {
 		fmt.Println("Manga:", manga.MangaTitle)
 		fmt.Println("Chapter count:", manga.ChapterCount)
 		fmt.Println("True Chapter count:", len(manga.Chapters))
-		for i, chapter := range manga.Chapters {
-			fmt.Printf("%v : %v : %v\n", i, chapter.ChapterNumber, chapter.Title)
+		for _, chapter := range manga.Chapters {
+			fmt.Printf("%v : %v\n", chapter.ChapterNumber, chapter.Title)
 			pngUrls, err := chapter.FetchImages()
 			if err != nil {
 				panic("[Error] While fetching PNGUrls from chapter: " + err.Error())
