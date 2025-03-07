@@ -2,7 +2,7 @@ package main
 
 import (
 	"fmt"
-	"mangaDownloaderGO/config"
+	"mangaDownloaderGO/configManager"
 	"mangaDownloaderGO/fetcher"
 	"mangaDownloaderGO/logger"
 	"os"
@@ -18,25 +18,25 @@ func main() {
 	if _, err := os.Open(configPath); err != nil {
 		downloadPath := filepath.Join("..", "downloads", "manga")
 		logPath := filepath.Join("..", "logs")
-		err := config.GenerateConfig(configPath, downloadPath, logPath)
+		err := configManager.GenerateConfig(configPath, downloadPath, logPath)
 		if err != nil {
 			panic(err)
 		}
 	}
 
-	configFile, err := config.LoadConfig(configPath)
+	config, err := configManager.LoadConfig(configPath)
 	if err != nil {
 		panic(err)
 	}
 
-	logPath := filepath.Join(configFile.LogPath, time.Now().String() + ".txt")
+	logPath := filepath.Join(config.LogPath, time.Now().String() + ".txt")
 	err = logger.CreateFile(logPath)
 	if err != nil {
 		panic(err)
 	}
 
-	downloadPath := configFile.DownloadPath
-	fetcher.SetURL(configFile.MangaDexUrl)
+	downloadPath := config.DownloadPath
+	fetcher.SetURL(config.MangaDexUrl)
 
 	fetchedMangas, err := fetcher.FetchMangas(os.Args[1])
 
