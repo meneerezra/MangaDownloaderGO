@@ -61,9 +61,10 @@ func main() {
 	for _, language := range languages {
 		chapterParams.Add("translatedLanguage[]", language)
 	}
-
+	startNow := time.Now()
+	count := 0
 	for _, manga := range fetchedMangas {
-
+		count += len(manga.Chapters)
 		// Limit refers to the limit of the amount of chapters set in url query default = 100
 		err := manga.AddChaptersToManga(chapterParams, 500)
 		if err != nil {
@@ -75,5 +76,8 @@ func main() {
 			logger.ErrorFromErr(err)
 			return
 		}
+
 	}
+	logger.LogInfoF("%v done in: %v", count, time.Since(startNow))
+
 }

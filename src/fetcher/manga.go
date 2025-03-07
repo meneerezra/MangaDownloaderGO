@@ -8,7 +8,6 @@ import (
 	"net/url"
 	"strconv"
 	"sync"
-	"time"
 )
 
 type Manga struct {
@@ -22,8 +21,6 @@ func (manga Manga) DownloadManga(downloadPath string) error {
 	logger.LogInfoF("Manga: %v", manga.MangaTitle)
 	logger.LogInfoF("Chapter count: %v", manga.ChapterCount)
 	logger.LogInfoF("True Chapter count: %v", len(manga.Chapters))
-
-	startNow := time.Now()
 
 	ch := make(chan error)
 	var weightGroup sync.WaitGroup
@@ -48,9 +45,6 @@ func (manga Manga) DownloadManga(downloadPath string) error {
 	for err := range ch {
 		logger.ErrorFromErr(err)
 	}
-
-	logger.LogInfoF("%v done in: %v", len(manga.Chapters), time.Since(startNow))
-
 	return nil
 }
 
