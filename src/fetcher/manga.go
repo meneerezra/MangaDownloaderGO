@@ -14,7 +14,6 @@ type Manga struct {
 	MangaTitle   string
 	ChapterCount int
 	Chapters     []Chapter
-	PublisherID string
 }
 
 func (manga *Manga) AddChaptersToManga(params url.Values, limit int) error {
