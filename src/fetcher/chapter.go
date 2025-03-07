@@ -16,12 +16,13 @@ type Cover struct {
 }
 
 type Chapter struct {
-	ID    string
-	Manga Manga
-	Title string
+	ID             string
+	Manga          Manga
+	Title          string
 	ChapterNumber  float64
 	Cover          Cover
-	RelationsShips []ChapterRelationship
+	RelationsShips      []ChapterRelationship
+	ScanlationGroupName string
 }
 
 type ChapterRelationship struct {
@@ -29,35 +30,35 @@ type ChapterRelationship struct {
 	Type string
 }
 
-func (chapter Chapter) FetchImages() (jsonModels.ChapterPNGs, error) {
-	chapterPNGsObject := jsonModels.ChapterPNGs{}
-	body, err := RequestToJsonBytes(MangaDexUrl + "/at-home/server/" + chapter.ID, url.Values{})
+func (chapter Chapter) FetchImages() (jsonModels.ChapterImages, error) {
+	chapterImagesObject := jsonModels.ChapterImages{}
+	body, err := RequestToJsonBytes(MangaDexUrl+"/at-home/server/"+chapter.ID, url.Values{})
 	if err != nil {
-		return chapterPNGsObject, fmt.Errorf("Error while requesting: %w", err)
+		return chapterImagesObject, fmt.Errorf("Error while requesting: %w", err)
 	}
 
 	var mangaDexDownloadResponse jsonModels.MangaDexDownloadResponse
 	if err := json.Unmarshal(body, &mangaDexDownloadResponse); err != nil {
-		return chapterPNGsObject, fmt.Errorf("Error while deserializing JSON: %w", err)
+		return chapterImagesObject, fmt.Errorf("Error while deserializing JSON: %w", err)
 	}
 
 	if mangaDexDownloadResponse.Result == "error" {
 		HandleRatelimit()
 		return chapter.FetchImages()
 	}
-	chapterPNGsObject.BaseURL = mangaDexDownloadResponse.BaseURL
-	chapterPNGsObject.PNGName = mangaDexDownloadResponse.Chapter.Data
-	chapterPNGsObject.Hash = mangaDexDownloadResponse.Chapter.Hash
+	chapterImagesObject.BaseURL = mangaDexDownloadResponse.BaseURL
+	chapterImagesObject.ImageName = mangaDexDownloadResponse.Chapter.Data
+	chapterImagesObject.Hash = mangaDexDownloadResponse.Chapter.Hash
 
-	return chapterPNGsObject, nil
+	return chapterImagesObject, nil
 }
 
-func (chapter Chapter) DownloadPages(chapterPNGs jsonModels.ChapterPNGs, path string, cbzPath string) error {
+func (chapter Chapter) DownloadPages(chapterPNGs jsonModels.ChapterImages, path string, cbzPath string) error {
 
 	var chapterPathFiles []string
 
-	for _, pngName := range chapterPNGs.PNGName {
-		url := chapterPNGs.BaseURL + "/data/" + chapterPNGs.Hash + "/" + pngName
+	for _, imageName := range chapterPNGs.ImageName {
+		url := chapterPNGs.BaseURL + "/data/" + chapterPNGs.Hash + "/" + imageName
 		resp, err := http.Get(url)
 		if err != nil {
 			return fmt.Errorf("Error while getting response: %w", err)
@@ -65,7 +66,7 @@ func (chapter Chapter) DownloadPages(chapterPNGs jsonModels.ChapterPNGs, path st
 
 		defer resp.Body.Close()
 
-		pathToImage := filepath.Join(path, pngName)
+		pathToImage := filepath.Join(path, imageName)
 
 		file, err := os.Create(pathToImage)
 		if err != nil {
