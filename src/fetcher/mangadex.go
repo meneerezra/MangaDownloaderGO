@@ -99,7 +99,7 @@ func CompressImages(chapterPathFiles []string, cbzPath string, chapter Chapter) 
 	// Can't add float as an argument to filepath.Join() so convert it first
 	chapterNumberInStr := strconv.FormatFloat(chapter.ChapterNumber, 'f', -1, 64)
 	cbzPathWithChapter := filepath.Join(cbzPath,
-		"Chapter " + chapterNumberInStr + " " + chapter.Manga.MangaTitle + " " + chapter.ID + ".cbz")
+		chapter.Manga.MangaTitle+" - "+"Ch. "+chapterNumberInStr+" ["+chapter.ScanlationGroupName+"].cbz")
 	zipFile, err := os.Create(cbzPathWithChapter)
 	if err != nil {
 		return fmt.Errorf("Error while creating zipfile: %w", err)
@@ -108,7 +108,6 @@ func CompressImages(chapterPathFiles []string, cbzPath string, chapter Chapter) 
 
 	zipWriter := zip.NewWriter(zipFile)
 	defer zipWriter.Close()
-
 
 	for _, file := range chapterPathFiles {
 		fileToCbz, err := os.Open(file)
@@ -157,5 +156,34 @@ func CompressImages(chapterPathFiles []string, cbzPath string, chapter Chapter) 
 func HandleRatelimit() {
 	rateLimitTimer := time.NewTimer(30 * time.Second)
 	logger.WarningFromString("Rate limit hit starting 30s timer")
-	<- rateLimitTimer.C
+	<-rateLimitTimer.C
+}
+
+func FetchGroupNameByID(id string) (string, error) {
+	type Attributes struct {
+		Name string `json:"name"`
+	}
+
+	type GroupDataItem struct {
+		Attributes Attributes `json:"attributes"`
+	}
+
+	type GroupResponse struct {
+		Data GroupDataItem `json:"data"`
+		_    struct{}        `json:"-"`
+	}
+
+	body, err := RequestToJsonBytes(MangaDexUrl+"/group/"+id, url.Values{})
+	if err != nil {
+		return "", err
+	}
+
+	var groupResponse GroupResponse
+	if err = json.Unmarshal(body, &groupResponse); err != nil {
+		return "", err
+	}
+
+	name := groupResponse.Data.Attributes.Name
+
+	return name, nil
 }
