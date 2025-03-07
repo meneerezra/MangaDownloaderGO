@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"mangaDownloaderGO/fetcher"
 	"mangaDownloaderGO/utils/configManager"
 	"mangaDownloaderGO/utils/logger"
@@ -20,19 +19,22 @@ func main() {
 		logPath := filepath.Join("..", "logs")
 		err := configManager.GenerateConfig(configPath, downloadPath, logPath)
 		if err != nil {
-			panic(err)
+			logger.ErrorFromErr(err)
+			return
 		}
 	}
 
 	config, err := configManager.LoadConfig(configPath)
 	if err != nil {
-		panic(err)
+		logger.ErrorFromErr(err)
+		return
 	}
 
 	logPath := filepath.Join(config.LogPath, time.Now().String() + ".txt")
 	err = logger.CreateFile(logPath)
 	if err != nil {
-		panic(err)
+		logger.ErrorFromErr(err)
+		return
 	}
 
 	downloadPath := config.DownloadPath
@@ -53,7 +55,8 @@ func main() {
 			logger.LogInfoF("%v : %v : %v", i, chapter.ChapterNumber, chapter.Title)
 			pngUrls, err := chapter.FetchImages()
 			if err != nil {
-				panic("[Error] While fetching image urls from chapter: " + err.Error())
+				logger.ErrorFromString("While fetching image urls from chapter: " + err.Error())
+				return
 			}
 
 			path := filepath.Join("..", "downloads", "tmp", chapter.Manga.MangaTitle)
@@ -61,21 +64,23 @@ func main() {
 
 			err = os.MkdirAll(path, os.ModePerm)
 			if err != nil {
-				panic("Error while making directories: " + err.Error())
+				logger.ErrorFromString("while making directories: " + err.Error())
+				return
 			}
 
 			err = os.MkdirAll(cbzPath, os.ModePerm)
 			if err != nil {
-				panic("Error while making directories: " + err.Error())
+				logger.ErrorFromString("while making directories: " + err.Error())
+				return
 			}
 
 			err = chapter.DownloadPages(pngUrls, path, cbzPath)
 			if err != nil {
-				panic("[Error] While downloading pages: " + err.Error())
+				logger.ErrorFromString("While downloading pages: " + err.Error())
+				return
 			}
 
 		}
-		fmt.Println("-----------------------------------------")
 	}
 
 }

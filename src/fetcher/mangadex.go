@@ -143,7 +143,7 @@ func CompressImages(chapterPathFiles []string, cbzPath string, chapter Chapter) 
 
 		err = os.Remove(file)
 		if err != nil {
-			fmt.Println("[Warning] could not delete file: ", err)
+			logger.WarningFromStringF("Could not delete file: %v", err)
 		}
 	}
 
@@ -153,6 +153,6 @@ func CompressImages(chapterPathFiles []string, cbzPath string, chapter Chapter) 
 
 func HandleRatelimit() {
 	rateLimitTimer := time.NewTimer(30 * time.Second)
-	fmt.Println("[Warning] Rate limit hit starting 30s timer")
+	logger.WarningFromString("Rate limit hit starting 30s timer")
 	<- rateLimitTimer.C
 }

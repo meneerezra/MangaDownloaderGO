@@ -41,22 +41,29 @@ func CreateFile(path string) error {
 }
 
 func ErrorFromErr(err error, a ...any) {
-	printedMessage := fmt.Sprintf(red+ "[Error] " + err.Error(), a)
-	writedMessage :=  fmt.Sprintf("[Error] " + err.Error(), a)
+	printedMessage := fmt.Sprintf(red+ "[Error] " + err.Error(), a...)
+	writedMessage :=  fmt.Sprintf("[Error] " + err.Error(), a...)
 	writeToFileAndPrint(printedMessage, writedMessage)
 }
 
 func ErrorFromString(err string, a ...any) {
-	printedMessage := fmt.Sprintf(red+ "[Error] " + err, a)
-	writedMessage :=  fmt.Sprintf("[Error] " + err, a)
+	printedMessage := fmt.Sprintf(red+ "[Error] " + err, a...)
+	writedMessage :=  fmt.Sprintf("[Error] " + err, a...)
 	writeToFileAndPrint(printedMessage, writedMessage)
 }
 
-func WarningFromString(warning string, a ...any) {
-	printedMessage := fmt.Sprintf(yellow+ "[Warning] " + warning, a)
-	writedMessage :=  fmt.Sprintf("[Warning] " + warning, a)
+func WarningFromStringF(warning string, a ...any) {
+	printedMessage := fmt.Sprintf(yellow+ "[Warning] " + warning, a...)
+	writedMessage :=  fmt.Sprintf("[Warning] " + warning, a...)
 	writeToFileAndPrint(printedMessage, writedMessage)
 }
+
+func WarningFromString(warning string) {
+	printedMessage := yellow+ "[Warning] " + warning
+	writedMessage :=  "[Warning] " + warning
+	writeToFileAndPrint(printedMessage, writedMessage)
+}
+
 
 func LogInfo(message string) {
 	printedMessage := "[Info] " + message
@@ -68,24 +75,17 @@ func LogInfoF(message string, a ...any) {
 	writeToFileAndPrint(printedMessage, printedMessage)
 }
 
-func WarningFromErr(err error, a ...any) {
-	printedMessage := fmt.Sprintf(yellow+ "[Warning] " + err.Error(), a)
-	writedMessage :=  fmt.Sprintf("[Warning] " + err.Error(), a)
-	writeToFileAndPrint(printedMessage, writedMessage)
-}
-
 func writeToFileAndPrint(printedMessage string, writedMessage string) {
 	timeInFormat := time.Now().Format(timeFormat) + " "
-	fmt.Println(timeInFormat + printedMessage)
+	fmt.Println(timeInFormat + printedMessage + reset)
 	file, err := os.OpenFile(Path, os.O_CREATE|os.O_WRONLY|os.O_APPEND, os.ModePerm)
 	if err != nil {
-		fmt.Printf("[Warning] could not log: %v\n", err)
+		WarningFromStringF(timeInFormat + yellow + "[Warning] Could not log: %v\n" + reset, err)
 	}
 	defer file.Close()
 
 	_, err = file.WriteString(timeInFormat + writedMessage + "\n")
 	if err != nil {
-		fmt.Printf("[Warning] could not log: %v\n", err)
+		WarningFromStringF(timeInFormat + yellow + "[Warning] Could not log: %v\n" + reset, err)
 	}
-
 }

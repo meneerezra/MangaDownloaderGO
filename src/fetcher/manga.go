@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"mangaDownloaderGO/fetcher/jsonModels"
+	"mangaDownloaderGO/utils/logger"
 	"net/url"
 	"strconv"
 )
@@ -72,7 +73,7 @@ func (manga Manga) GetChaptersFromMangaDex(params url.Values) ([]Chapter, error)
 		chapterNumber, err := strconv.ParseFloat(chapterData.Attributes.Chapter, 32)
 		// Sometimes a manga has no chapters and their value is null in the json and errors but go still converts it to 0 this is to filter out console spam
 		if err != nil && chapterData.Attributes.Chapter != "" {
-			fmt.Println("[Warning] Could not parse chapter:", err.Error())
+			logger.WarningFromString("Could not parse chapter: " + err.Error())
 		}
 
 		chapter := Chapter{
