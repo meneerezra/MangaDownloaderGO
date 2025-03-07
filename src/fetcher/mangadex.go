@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"mangaDownloaderGO/fetcher/jsonModels"
+	"mangaDownloaderGO/logger"
 	"net/http"
 	"net/url"
 	"os"
@@ -29,7 +30,7 @@ func RequestToJsonBytes(urlString string, params url.Values) ([]byte, error) {
 	base.RawQuery = params.Encode()
 
 	// Debug print
-	fmt.Println(base.String())
+	logger.LogInfo(base.String())
 
 	resp, err := http.Get(base.String())
 	if err != nil {
@@ -146,7 +147,7 @@ func CompressImages(chapterPathFiles []string, cbzPath string, chapter Chapter) 
 		}
 	}
 
-	fmt.Println("Cbz created succefully " + cbzPathWithChapter)
+	logger.LogInfo("Cbz created succefully " + cbzPathWithChapter)
 	return nil
 }
 

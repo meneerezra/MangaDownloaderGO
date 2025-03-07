@@ -86,6 +86,5 @@ func (chapter Chapter) DownloadPages(chapterPNGs jsonModels.ChapterPNGs, path st
 		return fmt.Errorf("Error compressing PNG's to cbz: %w", err)
 	}
 
-	fmt.Println("Done with chapter!")
 	return nil
 }

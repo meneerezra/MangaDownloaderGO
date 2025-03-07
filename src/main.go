@@ -4,13 +4,21 @@ import (
 	"fmt"
 	"mangaDownloaderGO/config"
 	"mangaDownloaderGO/fetcher"
+	"mangaDownloaderGO/logger"
 	"os"
 	"path/filepath"
+	"time"
 )
 
 func main() {
 	//router := gin.Default()
 	//server.StartServer(router)
+	logPath := filepath.Join("..", "logs", time.Now().String() + ".txt")
+	err := logger.CreateFile(logPath)
+	if err != nil {
+		panic(err)
+	}
+
 	configPath := filepath.Join("..", "config.yml")
 	if _, err := os.Open(configPath); err != nil {
 		downloadPath := filepath.Join("..", "downloads", "manga")
@@ -31,16 +39,16 @@ func main() {
 	fetchedMangas, err := fetcher.FetchMangas(os.Args[1])
 
 	if err != nil {
-		fmt.Println("[Error] While fetching manga's:", err.Error())
+		logger.ErrorFromString("While fetching manga's: " + err.Error())
 		return
 	}
 
 	for _, manga := range fetchedMangas {
-		fmt.Println("Manga:", manga.MangaTitle)
-		fmt.Println("Chapter count:", manga.ChapterCount)
-		fmt.Println("True Chapter count:", len(manga.Chapters))
+		logger.LogInfoF("Manga: %v", manga.MangaTitle)
+		logger.LogInfoF("Chapter count: %v", manga.ChapterCount)
+		logger.LogInfoF("True Chapter count: %v", len(manga.Chapters))
 		for i, chapter := range manga.Chapters {
-			fmt.Printf("%v : %v : %v\n", i, chapter.ChapterNumber, chapter.Title)
+			logger.LogInfoF("%v : %v : %v", i, chapter.ChapterNumber, chapter.Title)
 			pngUrls, err := chapter.FetchImages()
 			if err != nil {
 				panic("[Error] While fetching image urls from chapter: " + err.Error())
