@@ -70,14 +70,13 @@ func main() {
 				if relationShip.Type != "scanlation_group" {
 					continue
 				}
-				logger.LogInfo("Scan group ID: " + relationShip.ID)
-				scanlatioName, err := fetcher.FetchGroupNameByID(relationShip.ID)
+				scanlationGroupName, err := fetcher.FetchGroupNameByID(relationShip.ID)
 				if err != nil {
 					logger.ErrorFromErr(err)
 					return
 				}
-				chapter.ScanlationGroupName = scanlatioName
-				logger.LogInfo("Path to user upload: " + cbzPath)
+				chapter.ScanlationGroupName = scanlationGroupName
+				cbzPath = filepath.Join(cbzPath, manga.MangaTitle + " [" +  scanlationGroupName + "]")
 				break
 			}
 
