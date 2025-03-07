@@ -179,7 +179,8 @@ func FetchGroupNameByID(id string) (string, error) {
 
 	var groupResponse GroupResponse
 	if err = json.Unmarshal(body, &groupResponse); err != nil {
-		return "", err
+		HandleRatelimit()
+		return FetchGroupNameByID(id)
 	}
 
 	name := groupResponse.Data.Attributes.Name
