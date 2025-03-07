@@ -12,15 +12,15 @@ const (
 	timeFormat = "[15:04:05.000]"
 )
 
-var Reset = "\033[0m"
-var Red = "\033[31m"
-var Green = "\033[32m"
-var Yellow = "\033[33m"
-var Blue = "\033[34m"
-var Magenta = "\033[35m"
-var Cyan = "\033[36m"
-var Gray = "\033[37m"
-var White = "\033[97m"
+var reset = "\033[0m"
+var red = "\033[31m"
+var green = "\033[32m"
+var yellow = "\033[33m"
+var blue = "\033[34m"
+var magenta = "\033[35m"
+var cyan = "\033[36m"
+var gray = "\033[37m"
+var white = "\033[97m"
 
 var Path string
 
@@ -41,19 +41,19 @@ func CreateFile(path string) error {
 }
 
 func ErrorFromErr(err error, a ...any) {
-	printedMessage := fmt.Sprintf(Red+ "[Error] " + err.Error(), a)
+	printedMessage := fmt.Sprintf(red+ "[Error] " + err.Error(), a)
 	writedMessage :=  fmt.Sprintf("[Error] " + err.Error(), a)
 	writeToFileAndPrint(printedMessage, writedMessage)
 }
 
 func ErrorFromString(err string, a ...any) {
-	printedMessage := fmt.Sprintf(Red+ "[Error] " + err, a)
+	printedMessage := fmt.Sprintf(red+ "[Error] " + err, a)
 	writedMessage :=  fmt.Sprintf("[Error] " + err, a)
 	writeToFileAndPrint(printedMessage, writedMessage)
 }
 
 func WarningFromString(warning string, a ...any) {
-	printedMessage := fmt.Sprintf(Yellow+ "[Warning] " + warning, a)
+	printedMessage := fmt.Sprintf(yellow+ "[Warning] " + warning, a)
 	writedMessage :=  fmt.Sprintf("[Warning] " + warning, a)
 	writeToFileAndPrint(printedMessage, writedMessage)
 }
@@ -69,7 +69,7 @@ func LogInfoF(message string, a ...any) {
 }
 
 func WarningFromErr(err error, a ...any) {
-	printedMessage := fmt.Sprintf(Yellow+ "[Warning] " + err.Error(), a)
+	printedMessage := fmt.Sprintf(yellow+ "[Warning] " + err.Error(), a)
 	writedMessage :=  fmt.Sprintf("[Warning] " + err.Error(), a)
 	writeToFileAndPrint(printedMessage, writedMessage)
 }
