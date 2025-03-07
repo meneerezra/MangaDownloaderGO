@@ -13,22 +13,24 @@ import (
 func main() {
 	//router := gin.Default()
 	//server.StartServer(router)
-	logPath := filepath.Join("..", "logs", time.Now().String() + ".txt")
-	err := logger.CreateFile(logPath)
-	if err != nil {
-		panic(err)
-	}
 
 	configPath := filepath.Join("..", "config.yml")
 	if _, err := os.Open(configPath); err != nil {
 		downloadPath := filepath.Join("..", "downloads", "manga")
-		err := config.GenerateConfig(configPath, downloadPath)
+		logPath := filepath.Join("..", "logs")
+		err := config.GenerateConfig(configPath, downloadPath, logPath)
 		if err != nil {
 			panic(err)
 		}
 	}
 
 	configFile, err := config.LoadConfig(configPath)
+	if err != nil {
+		panic(err)
+	}
+
+	logPath := filepath.Join(configFile.LogPath, time.Now().String() + ".txt")
+	err = logger.CreateFile(logPath)
 	if err != nil {
 		panic(err)
 	}
