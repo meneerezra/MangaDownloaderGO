@@ -4,6 +4,7 @@ import (
 	"mangaDownloaderGO/fetcher"
 	"mangaDownloaderGO/utils/configManager"
 	"mangaDownloaderGO/utils/logger"
+	"net/url"
 	"os"
 	"path/filepath"
 	"time"
@@ -41,64 +42,38 @@ func main() {
 	fetcher.SetURL(config.MangaDexUrl)
 
 	fetchedMangas, err := fetcher.FetchMangas(os.Args[1])
-	err = fetcher.AddChaptersToMangas(fetchedMangas)
 	if err != nil {
-		logger.ErrorFromErr(err)
+		logger.ErrorFromStringF("While fetching manga's: " + err.Error())
 		return
 	}
+
+/*	err = fetcher.AddChaptersToMangas(fetchedMangas)
 	if err != nil {
-		logger.ErrorFromString("While fetching manga's: " + err.Error())
+		logger.ErrorFromStringF("While adding chapters to manga's: " + err.Error())
 		return
+	}*/
+
+	chapterParams := url.Values{}
+	languages := []string{"en"}
+
+	chapterParams.Add("order[chapter]", "asc")
+	chapterParams.Add("limit", "500")
+	for _, language := range languages {
+		chapterParams.Add("translatedLanguage[]", language)
 	}
 
 	for _, manga := range fetchedMangas {
-		logger.LogInfoF("Manga: %v", manga.MangaTitle)
-		logger.LogInfoF("Chapter count: %v", manga.ChapterCount)
-		logger.LogInfoF("True Chapter count: %v", len(manga.Chapters))
-		for i, chapter := range manga.Chapters {
-			logger.LogInfoF("%v : %v : %v", i, chapter.ChapterNumber, chapter.Title)
-			pngUrls, err := chapter.FetchImages()
-			if err != nil {
-				logger.ErrorFromString("While fetching image urls from chapter: " + err.Error())
-				return
-			}
 
-			path := filepath.Join("..", "downloads", "tmp", chapter.Manga.MangaTitle)
-			cbzPath := filepath.Join(downloadPath, chapter.Manga.MangaTitle)
+		// Limit refers to the limit of the amount of chapters set in url query default = 100
+		err := manga.AddChaptersToManga(chapterParams, 500)
+		if err != nil {
+			logger.ErrorFromStringF("Error while adding chapters to manga: %w", err)
+		}
 
-			for _, relationShip := range chapter.RelationsShips {
-				if relationShip.Type != "scanlation_group" {
-					continue
-				}
-				scanlationGroupName, err := fetcher.FetchGroupNameByID(relationShip.ID)
-				if err != nil {
-					logger.ErrorFromErr(err)
-					return
-				}
-				chapter.ScanlationGroupName = scanlationGroupName
-				cbzPath = filepath.Join(cbzPath, manga.MangaTitle + " [" +  scanlationGroupName + "]")
-				break
-			}
-
-			err = os.MkdirAll(path, os.ModePerm)
-			if err != nil {
-				logger.ErrorFromString("while making directories: " + err.Error())
-				return
-			}
-
-			err = os.MkdirAll(cbzPath, os.ModePerm)
-			if err != nil {
-				logger.ErrorFromString("while making directories: " + err.Error())
-				return
-			}
-
-			err = chapter.DownloadPages(pngUrls, path, cbzPath)
-			if err != nil {
-				logger.ErrorFromString("While downloading pages: " + err.Error())
-				return
-			}
-
+		err = manga.DownloadManga(downloadPath)
+		if err != nil {
+			logger.ErrorFromErr(err)
+			return
 		}
 	}
-
 }

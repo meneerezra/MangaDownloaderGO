@@ -46,7 +46,7 @@ func ErrorFromErr(err error, a ...any) {
 	writeToFileAndPrint(printedMessage, writedMessage)
 }
 
-func ErrorFromString(err string, a ...any) {
+func ErrorFromStringF(err string, a ...any) {
 	printedMessage := fmt.Sprintf(red+ "[Error] " + err, a...)
 	writedMessage :=  fmt.Sprintf("[Error] " + err, a...)
 	writeToFileAndPrint(printedMessage, writedMessage)

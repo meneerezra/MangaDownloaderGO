@@ -6,6 +6,8 @@ import (
 	"mangaDownloaderGO/fetcher/jsonModels"
 	"mangaDownloaderGO/utils/logger"
 	"net/url"
+	"os"
+	"path/filepath"
 	"strconv"
 )
 
@@ -14,6 +16,52 @@ type Manga struct {
 	MangaTitle   string
 	ChapterCount int
 	Chapters     []Chapter
+}
+
+func (manga Manga) DownloadManga(downloadPath string) error {
+	logger.LogInfoF("Manga: %v", manga.MangaTitle)
+	logger.LogInfoF("Chapter count: %v", manga.ChapterCount)
+	logger.LogInfoF("True Chapter count: %v", len(manga.Chapters))
+	for i, chapter := range manga.Chapters {
+		logger.LogInfoF("%v : %v : %v", i, chapter.ChapterNumber, chapter.Title)
+		pngUrls, err := chapter.FetchImages()
+		if err != nil {
+			return fmt.Errorf("While fetching image urls from chapter: " + err.Error())
+
+		}
+
+		path := filepath.Join("..", "downloads", "tmp", chapter.Manga.MangaTitle)
+		cbzPath := filepath.Join(downloadPath, chapter.Manga.MangaTitle)
+
+		for _, relationShip := range chapter.RelationsShips {
+			if relationShip.Type != "scanlation_group" {
+				continue
+			}
+			scanlationGroupName, err := FetchGroupNameByID(relationShip.ID)
+			if err != nil {
+				return err
+			}
+			chapter.ScanlationGroupName = scanlationGroupName
+			cbzPath = filepath.Join(cbzPath, manga.MangaTitle + " [" +  scanlationGroupName + "]")
+			break
+		}
+
+		err = os.MkdirAll(path, os.ModePerm)
+		if err != nil {
+			return fmt.Errorf("while making directories: " + err.Error())
+		}
+
+		err = os.MkdirAll(cbzPath, os.ModePerm)
+		if err != nil {
+			return fmt.Errorf("while making directories: " + err.Error())
+		}
+
+		err = chapter.DownloadPages(pngUrls, path, cbzPath)
+		if err != nil {
+			return fmt.Errorf("While downloading pages: " + err.Error())
+		}
+	}
+	return nil
 }
 
 func (manga *Manga) AddChaptersToManga(params url.Values, limit int) error {
