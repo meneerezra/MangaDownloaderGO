@@ -6,9 +6,9 @@ import (
 	"mangaDownloaderGO/fetcher/jsonModels"
 	"mangaDownloaderGO/utils/logger"
 	"net/url"
-	"os"
-	"path/filepath"
 	"strconv"
+	"sync"
+	"time"
 )
 
 type Manga struct {
@@ -22,45 +22,35 @@ func (manga Manga) DownloadManga(downloadPath string) error {
 	logger.LogInfoF("Manga: %v", manga.MangaTitle)
 	logger.LogInfoF("Chapter count: %v", manga.ChapterCount)
 	logger.LogInfoF("True Chapter count: %v", len(manga.Chapters))
+
+	startNow := time.Now()
+
+	ch := make(chan error)
+	var weightGroup sync.WaitGroup
 	for i, chapter := range manga.Chapters {
+		weightGroup.Add(1)
 		logger.LogInfoF("%v : %v : %v", i, chapter.ChapterNumber, chapter.Title)
-		pngUrls, err := chapter.FetchImages()
-		if err != nil {
-			return fmt.Errorf("While fetching image urls from chapter: " + err.Error())
-
-		}
-
-		path := filepath.Join("..", "downloads", "tmp", chapter.Manga.MangaTitle)
-		cbzPath := filepath.Join(downloadPath, chapter.Manga.MangaTitle)
-
-		for _, relationShip := range chapter.RelationsShips {
-			if relationShip.Type != "scanlation_group" {
-				continue
-			}
-			scanlationGroupName, err := FetchGroupNameByID(relationShip.ID)
+		go func() {
+			defer weightGroup.Done()
+			err := chapter.DownloadChapter(downloadPath)
 			if err != nil {
-				return err
+				logger.ErrorFromErr(err)
 			}
-			chapter.ScanlationGroupName = scanlationGroupName
-			cbzPath = filepath.Join(cbzPath, manga.MangaTitle + " [" +  scanlationGroupName + "]")
-			break
-		}
-
-		err = os.MkdirAll(path, os.ModePerm)
-		if err != nil {
-			return fmt.Errorf("while making directories: " + err.Error())
-		}
-
-		err = os.MkdirAll(cbzPath, os.ModePerm)
-		if err != nil {
-			return fmt.Errorf("while making directories: " + err.Error())
-		}
-
-		err = chapter.DownloadPages(pngUrls, path, cbzPath)
-		if err != nil {
-			return fmt.Errorf("While downloading pages: " + err.Error())
-		}
+		}()
 	}
+
+	weightGroup.Wait()
+
+	go func() {
+		close(ch)
+	}()
+
+	for err := range ch {
+		logger.ErrorFromErr(err)
+	}
+
+	logger.LogInfoF("%v done in: %v", len(manga.Chapters), time.Since(startNow))
+
 	return nil
 }
 

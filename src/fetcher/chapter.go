@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"mangaDownloaderGO/fetcher/jsonModels"
+	"mangaDownloaderGO/utils/logger"
 	"net/http"
 	"net/url"
 	"os"
@@ -54,11 +55,11 @@ func (chapter Chapter) FetchImages() (jsonModels.ChapterImages, error) {
 }
 
 func (chapter Chapter) DownloadPages(chapterPNGs jsonModels.ChapterImages, path string, cbzPath string) error {
-
 	var chapterPathFiles []string
 
 	for _, imageName := range chapterPNGs.ImageName {
 		url := chapterPNGs.BaseURL + "/data/" + chapterPNGs.Hash + "/" + imageName
+		logger.LogInfo(url)
 		resp, err := http.Get(url)
 		if err != nil {
 			return fmt.Errorf("Error while getting response: %w", err)
@@ -87,5 +88,45 @@ func (chapter Chapter) DownloadPages(chapterPNGs jsonModels.ChapterImages, path 
 		return fmt.Errorf("Error compressing PNG's to cbz: %w", err)
 	}
 
+	return nil
+}
+
+func (chapter Chapter) DownloadChapter(downloadPath string) error {
+
+	pngUrls, err := chapter.FetchImages()
+	if err != nil {
+		return fmt.Errorf("While fetching image urls from chapter: " + err.Error())
+	}
+
+	path := filepath.Join("..", "downloads", "tmp", chapter.Manga.MangaTitle)
+	cbzPath := filepath.Join(downloadPath, chapter.Manga.MangaTitle)
+
+	for _, relationShip := range chapter.RelationsShips {
+		if relationShip.Type != "scanlation_group" {
+			continue
+		}
+		scanlationGroupName, err := FetchGroupNameByID(relationShip.ID)
+		if err != nil {
+			return err
+		}
+		chapter.ScanlationGroupName = scanlationGroupName
+		cbzPath = filepath.Join(cbzPath, chapter.Manga.MangaTitle + " [" +  scanlationGroupName + "]")
+		break
+	}
+
+	err = os.MkdirAll(path, os.ModePerm)
+	if err != nil {
+		return fmt.Errorf("while making directories: " + err.Error())
+	}
+
+	err = os.MkdirAll(cbzPath, os.ModePerm)
+	if err != nil {
+		return fmt.Errorf("while making directories: " + err.Error())
+	}
+
+	err = chapter.DownloadPages(pngUrls, path, cbzPath)
+	if err != nil {
+		return err
+	}
 	return nil
 }
