@@ -50,8 +50,8 @@ type ChapterDownloadResponse struct {
 	_    struct{} `json:"-"`
 }
 
-type ChapterPNGs struct {
+type ChapterImages struct {
 	BaseURL string
-	Hash    string
-	PNGName []string
+	Hash      string
+	ImageName []string
 }
