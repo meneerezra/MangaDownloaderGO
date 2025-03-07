@@ -66,6 +66,21 @@ func main() {
 			path := filepath.Join("..", "downloads", "tmp", chapter.Manga.MangaTitle)
 			cbzPath := filepath.Join(downloadPath, chapter.Manga.MangaTitle)
 
+			for _, relationShip := range chapter.RelationsShips {
+				if relationShip.Type != "scanlation_group" {
+					continue
+				}
+				logger.LogInfo("Scan group ID: " + relationShip.ID)
+				scanlatioName, err := fetcher.FetchGroupNameByID(relationShip.ID)
+				if err != nil {
+					logger.ErrorFromErr(err)
+					return
+				}
+				chapter.ScanlationGroupName = scanlatioName
+				logger.LogInfo("Path to user upload: " + cbzPath)
+				break
+			}
+
 			err = os.MkdirAll(path, os.ModePerm)
 			if err != nil {
 				logger.ErrorFromString("while making directories: " + err.Error())
