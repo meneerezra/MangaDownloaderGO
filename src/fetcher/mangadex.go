@@ -72,7 +72,11 @@ func FetchMangas(mangaTitle string) ([]*Manga, error) {
 		fetchedMangas = append(fetchedMangas, &mangaObject)
 	}
 
-	for _, fetchedManga := range fetchedMangas {
+	return fetchedMangas, nil
+}
+
+func AddChaptersToMangas(mangas []*Manga) error {
+	for _, fetchedManga := range mangas {
 		chapterParams := url.Values{}
 		languages := []string{"en"}
 
@@ -85,11 +89,10 @@ func FetchMangas(mangaTitle string) ([]*Manga, error) {
 		// Limit refers to the limit of the amount of chapters set in url query default = 100
 		err := fetchedManga.AddChaptersToManga(chapterParams, 500)
 		if err != nil {
-			return nil, fmt.Errorf("Error while adding chapters to manga: %w", err)
+			return fmt.Errorf("Error while adding chapters to manga: %w", err)
 		}
 	}
-
-	return fetchedMangas, nil
+	return nil
 }
 
 func CompressImages(chapterPathFiles []string, cbzPath string, chapter Chapter) error {

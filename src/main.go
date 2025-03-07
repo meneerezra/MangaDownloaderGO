@@ -41,7 +41,11 @@ func main() {
 	fetcher.SetURL(config.MangaDexUrl)
 
 	fetchedMangas, err := fetcher.FetchMangas(os.Args[1])
-
+	err = fetcher.AddChaptersToMangas(fetchedMangas)
+	if err != nil {
+		logger.ErrorFromErr(err)
+		return
+	}
 	if err != nil {
 		logger.ErrorFromString("While fetching manga's: " + err.Error())
 		return
