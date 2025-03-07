@@ -148,9 +148,11 @@ func CompressImages(chapterPathFiles []string, cbzPath string, chapter Chapter) 
 			logger.WarningFromStringF("Could not delete file: %v", err)
 		}
 	}
-	err = os.Remove(filepath.Dir(filepath.Dir(chapterPathFiles[0])))
-	if err != nil {
-		logger.WarningFromStringF("Could not delete file: %v", err)
+	if chapterPathFiles != nil {
+		err = os.Remove(filepath.Dir(filepath.Dir(chapterPathFiles[0])))
+		if err != nil {
+			logger.WarningFromStringF("Could not delete file: %v", err)
+		}
 	}
 	logger.LogInfo("Cbz created succefully " + cbzPathWithChapter)
 	return nil
