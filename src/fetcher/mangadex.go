@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"io"
 	"mangaDownloaderGO/fetcher/jsonModels"
-	"mangaDownloaderGO/logger"
+	"mangaDownloaderGO/utils/logger"
 	"net/http"
 	"net/url"
 	"os"

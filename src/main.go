@@ -2,9 +2,9 @@ package main
 
 import (
 	"fmt"
-	"mangaDownloaderGO/configManager"
 	"mangaDownloaderGO/fetcher"
-	"mangaDownloaderGO/logger"
+	"mangaDownloaderGO/utils/configManager"
+	"mangaDownloaderGO/utils/logger"
 	"os"
 	"path/filepath"
 	"time"

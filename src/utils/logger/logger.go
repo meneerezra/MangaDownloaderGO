@@ -41,19 +41,19 @@ func CreateFile(path string) error {
 }
 
 func ErrorFromErr(err error, a ...any) {
-	printedMessage := fmt.Sprintf(Red + "[Error] " + err.Error(), a)
+	printedMessage := fmt.Sprintf(Red+ "[Error] " + err.Error(), a)
 	writedMessage :=  fmt.Sprintf("[Error] " + err.Error(), a)
 	writeToFileAndPrint(printedMessage, writedMessage)
 }
 
 func ErrorFromString(err string, a ...any) {
-	printedMessage := fmt.Sprintf(Red + "[Error] " + err, a)
+	printedMessage := fmt.Sprintf(Red+ "[Error] " + err, a)
 	writedMessage :=  fmt.Sprintf("[Error] " + err, a)
 	writeToFileAndPrint(printedMessage, writedMessage)
 }
 
 func WarningFromString(warning string, a ...any) {
-	printedMessage := fmt.Sprintf(Yellow + "[Warning] " + warning, a)
+	printedMessage := fmt.Sprintf(Yellow+ "[Warning] " + warning, a)
 	writedMessage :=  fmt.Sprintf("[Warning] " + warning, a)
 	writeToFileAndPrint(printedMessage, writedMessage)
 }
@@ -69,7 +69,7 @@ func LogInfoF(message string, a ...any) {
 }
 
 func WarningFromErr(err error, a ...any) {
-	printedMessage := fmt.Sprintf(Yellow + "[Warning] " + err.Error(), a)
+	printedMessage := fmt.Sprintf(Yellow+ "[Warning] " + err.Error(), a)
 	writedMessage :=  fmt.Sprintf("[Warning] " + err.Error(), a)
 	writeToFileAndPrint(printedMessage, writedMessage)
 }
