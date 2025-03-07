@@ -64,9 +64,9 @@ func main() {
 	startNow := time.Now()
 	count := 0
 	for _, manga := range fetchedMangas {
-		count += len(manga.Chapters)
 		// Limit refers to the limit of the amount of chapters set in url query default = 100
 		err := manga.AddChaptersToManga(chapterParams, 500)
+		count += len(manga.Chapters)
 		if err != nil {
 			logger.ErrorFromStringF("Error while adding chapters to manga: %w", err)
 		}
