@@ -47,6 +47,7 @@ func (chapter Chapter) FetchImages() (jsonModels.ChapterImages, error) {
 		HandleRatelimit()
 		return chapter.FetchImages()
 	}
+
 	chapterImagesObject.BaseURL = mangaDexDownloadResponse.BaseURL
 	chapterImagesObject.ImageName = mangaDexDownloadResponse.Chapter.Data
 	chapterImagesObject.Hash = mangaDexDownloadResponse.Chapter.Hash

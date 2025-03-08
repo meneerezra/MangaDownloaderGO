@@ -12,6 +12,7 @@ import (
 	"os"
 	"path/filepath"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -184,6 +185,6 @@ func FetchGroupNameByID(id string) (string, error) {
 	}
 
 	name := groupResponse.Data.Attributes.Name
-
+	name = strings.Replace(name, "/", "", -1)
 	return name, nil
 }
