@@ -37,8 +37,9 @@ func (manga Manga) DownloadManga(config *configManager.Config) error {
 	return nil
 }
 
+// AddChaptersToManga Automatically executes FetchChaptersFromMangaDex() too
 func (manga *Manga) AddChaptersToManga(params url.Values, limit int) error {
-	chapters, err := manga.GetChaptersFromMangaDex(params)
+	chapters, err := manga.FetchChaptersFromMangaDex(params)
 	if err != nil {
 		return fmt.Errorf("Error requesting chapters: %w", err)
 	}
@@ -66,7 +67,8 @@ func (manga *Manga) AddChaptersToManga(params url.Values, limit int) error {
 	return nil
 }
 
-func (manga Manga) GetChaptersFromMangaDex(params url.Values) ([]Chapter, error) {
+// FetchChaptersFromMangaDex This has its own function for recursion when rate limit hit
+func (manga Manga) FetchChaptersFromMangaDex(params url.Values) ([]Chapter, error) {
 	var chapters []Chapter
 
 	body, err := RequestToJsonBytes(MangaDexUrl+"/manga/"+manga.ID+"/feed", params)
@@ -79,7 +81,7 @@ func (manga Manga) GetChaptersFromMangaDex(params url.Values) ([]Chapter, error)
 	// Mangadex (or cloudflare im not sure) sends a html page here when ratelimit is reached
 	if err := json.Unmarshal(body, &mangadexResponse); err != nil {
 		HandleRatelimit()
-		return manga.GetChaptersFromMangaDex(params)
+		return manga.FetchChaptersFromMangaDex(params)
 	}
 
 	for _, chapterData := range mangadexResponse.Data {
