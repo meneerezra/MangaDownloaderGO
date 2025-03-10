@@ -75,14 +75,6 @@ func main() {
 	startNow := time.Now()
 	count := 0
 	for _, manga := range fetchedMangas {
-		// Limit refers to the limit of the amount of chapters set in url query default = 100
-
-/*		err := manga.AddChaptersToManga(chapterParams, 500)
-		if err != nil {
-			logger.ErrorFromStringF("Error while adding chapters to %v: %w", manga.MangaTitle, err)
-			continue
-		}*/
-
 		count += len(manga.Chapters)
 
 		err = manga.DownloadManga(config)
@@ -100,11 +92,5 @@ func main() {
 
 	}
 	logger.LogInfoF("%v done in: %v", count, time.Since(startNow))
-
-	// Remove tmp folder after program is done
-/*	err = os.RemoveAll(config.TmpPath)
-	if err != nil {
-		logger.WarningFromStringF("Could not delete directory: %v", err.Error())
-	}*/
 
 }
