@@ -61,7 +61,6 @@ func (chapter Chapter) DownloadPages(chapterPNGs jsonModels.ChapterImages, path 
 
 	for _, imageName := range chapterPNGs.ImageName {
 		url := chapterPNGs.BaseURL + "/data/" + chapterPNGs.Hash + "/" + imageName
-		logger.LogInfo(url)
 		resp, err := http.Get(url)
 		if err != nil {
 			return fmt.Errorf("Error while getting response: %w", err)
