@@ -8,6 +8,7 @@ import (
 	"mangaDownloaderGO/utils/logger"
 	"net/url"
 	"strconv"
+	"sync"
 )
 
 type Manga struct {
@@ -22,13 +23,17 @@ func (manga Manga) DownloadManga(config *configManager.Config) error {
 	logger.LogInfoF("Chapter count: %v", manga.ChapterCount)
 	logger.LogInfoF("True Chapter count: %v", len(manga.Chapters))
 
+	var weightGroup sync.WaitGroup
+
 	for i, chapter := range manga.Chapters {
 		logger.LogInfoF("%v : %v : %v", i, chapter.ChapterNumber, chapter.Title)
-		err := chapter.DownloadChapter(config)
+		err := chapter.DownloadChapter(config, &weightGroup)
 		if err != nil {
 			logger.ErrorFromErr(err)
 		}
+
 	}
+	weightGroup.Wait()
 	return nil
 }
 

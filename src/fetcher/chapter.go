@@ -93,7 +93,7 @@ func (chapter Chapter) DownloadPages(chapterPNGs jsonModels.ChapterImages, manga
 	return nil
 }
 
-func (chapter Chapter) DownloadChapter(config *configManager.Config) error {
+func (chapter Chapter) DownloadChapter(config *configManager.Config, weightGroup *sync.WaitGroup) error {
 	downloadPath := config.DownloadPath
 
 	pngUrls, err := chapter.FetchImages()
@@ -127,20 +127,14 @@ func (chapter Chapter) DownloadChapter(config *configManager.Config) error {
 		return fmt.Errorf("while making directories: " + err.Error())
 	}
 
-	ch := make(chan error)
-	var weightGroup sync.WaitGroup
+	weightGroup.Add(1)
 	go func() {
-		weightGroup.Add(1)
 		defer weightGroup.Done()
 		err = chapter.DownloadPages(pngUrls, mangaTmpPath, cbzPath)
 		if err != nil {
 			logger.ErrorFromStringF("Something went wrong while downloading images: ", err.Error())
 		}
 	} ()
-	weightGroup.Wait()
-	go func() {
-		close(ch)
-	}()
 
 	return nil
 }

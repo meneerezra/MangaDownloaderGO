@@ -43,7 +43,7 @@ func main() {
 
 	fetchedMangas, err := fetcher.FetchMangas(
 		"Plastic Memories",
-		"Solo Leveling",
+/*		"Solo Leveling",
 		"Omniscient Reader's Viewpoint",
 		"Beginning after the end",
 		"Necromancer",
@@ -51,7 +51,7 @@ func main() {
 		"blue box",
 		"The world after the fall",
 		"great estate developer",
-		"call of the night")
+		"call of the night"*/)
 	if err != nil {
 		logger.ErrorFromStringF("While fetching manga's: " + err.Error())
 		return
@@ -92,7 +92,7 @@ func main() {
 		}
 
 		mangaTmpPath := filepath.Join(config.TmpPath, manga.MangaTitle)
-		err := os.Remove(mangaTmpPath)
+		err := os.RemoveAll(mangaTmpPath)
 		if err != nil {
 			logger.ErrorFromStringF("Could not delete tmp dir: %w", err.Error())
 			continue
@@ -102,9 +102,9 @@ func main() {
 	logger.LogInfoF("%v done in: %v", count, time.Since(startNow))
 
 	// Remove tmp folder after program is done
-	err = os.RemoveAll(config.TmpPath)
+/*	err = os.RemoveAll(config.TmpPath)
 	if err != nil {
 		logger.WarningFromStringF("Could not delete directory: %v", err.Error())
-	}
+	}*/
 
 }
