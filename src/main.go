@@ -79,4 +79,12 @@ func main() {
 	}
 	logger.LogInfoF("%v done in: %v", count, time.Since(startNow))
 
+	tmpPath := filepath.Join("..", "downloads", "tmp")
+
+	// Remove tmp folder after program is done
+	err = os.Remove(tmpPath)
+	if err != nil {
+		logger.WarningFromStringF("Could not delete directory: %v", err)
+	}
+
 }
