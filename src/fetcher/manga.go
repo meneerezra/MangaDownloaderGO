@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"mangaDownloaderGO/fetcher/jsonModels"
+	"mangaDownloaderGO/utils/configManager"
 	"mangaDownloaderGO/utils/logger"
 	"net/url"
 	"strconv"
@@ -16,14 +17,14 @@ type Manga struct {
 	Chapters     []Chapter
 }
 
-func (manga Manga) DownloadManga(downloadPath string) error {
+func (manga Manga) DownloadManga(config *configManager.Config) error {
 	logger.LogInfoF("Manga: %v", manga.MangaTitle)
 	logger.LogInfoF("Chapter count: %v", manga.ChapterCount)
 	logger.LogInfoF("True Chapter count: %v", len(manga.Chapters))
 
 	for i, chapter := range manga.Chapters {
 		logger.LogInfoF("%v : %v : %v", i, chapter.ChapterNumber, chapter.Title)
-		err := chapter.DownloadChapter(downloadPath)
+		err := chapter.DownloadChapter(config)
 		if err != nil {
 			logger.ErrorFromErr(err)
 		}

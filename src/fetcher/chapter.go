@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"mangaDownloaderGO/fetcher/jsonModels"
+	"mangaDownloaderGO/utils/configManager"
 	"mangaDownloaderGO/utils/logger"
 	"net/http"
 	"net/url"
@@ -56,7 +57,7 @@ func (chapter Chapter) FetchImages() (jsonModels.ChapterImages, error) {
 	return chapterImagesObject, nil
 }
 
-func (chapter Chapter) DownloadPages(chapterPNGs jsonModels.ChapterImages, path string, cbzPath string) error {
+func (chapter Chapter) DownloadPages(chapterPNGs jsonModels.ChapterImages, mangaTmpPath string, cbzPath string) error {
 	var chapterPathFiles []string
 
 	for _, imageName := range chapterPNGs.ImageName {
@@ -68,7 +69,7 @@ func (chapter Chapter) DownloadPages(chapterPNGs jsonModels.ChapterImages, path 
 
 		defer resp.Body.Close()
 
-		pathToImage := filepath.Join(path, imageName)
+		pathToImage := filepath.Join(mangaTmpPath, imageName)
 
 		file, err := os.Create(pathToImage)
 		if err != nil {
@@ -92,14 +93,15 @@ func (chapter Chapter) DownloadPages(chapterPNGs jsonModels.ChapterImages, path 
 	return nil
 }
 
-func (chapter Chapter) DownloadChapter(downloadPath string) error {
+func (chapter Chapter) DownloadChapter(config *configManager.Config) error {
+	downloadPath := config.DownloadPath
 
 	pngUrls, err := chapter.FetchImages()
 	if err != nil {
 		return fmt.Errorf("While fetching image urls from chapter: " + err.Error())
 	}
 
-	path := filepath.Join("..", "downloads", "tmp", chapter.Manga.MangaTitle)
+	mangaTmpPath := filepath.Join(config.TmpPath, chapter.Manga.MangaTitle)
 	cbzPath := filepath.Join(downloadPath, chapter.Manga.MangaTitle)
 
 	for _, relationShip := range chapter.RelationsShips {
@@ -115,7 +117,7 @@ func (chapter Chapter) DownloadChapter(downloadPath string) error {
 		break
 	}
 
-	err = os.MkdirAll(path, os.ModePerm)
+	err = os.MkdirAll(mangaTmpPath, os.ModePerm)
 	if err != nil {
 		return fmt.Errorf("while making directories: " + err.Error())
 	}
@@ -130,7 +132,7 @@ func (chapter Chapter) DownloadChapter(downloadPath string) error {
 	go func() {
 		weightGroup.Add(1)
 		defer weightGroup.Done()
-		err = chapter.DownloadPages(pngUrls, path, cbzPath)
+		err = chapter.DownloadPages(pngUrls, mangaTmpPath, cbzPath)
 		if err != nil {
 			logger.ErrorFromStringF("Something went wrong while downloading images: ", err.Error())
 		}

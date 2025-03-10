@@ -18,7 +18,8 @@ func main() {
 	if _, err := os.Open(configPath); err != nil {
 		downloadPath := filepath.Join("..", "downloads", "manga")
 		logPath := filepath.Join("..", "logs")
-		err := configManager.GenerateConfig(configPath, downloadPath, logPath)
+		tmpPath := filepath.Join("..", "downloads", "tmp")
+		err := configManager.GenerateConfig(configPath, downloadPath, logPath, tmpPath)
 		if err != nil {
 			logger.ErrorFromErr(err)
 			return
@@ -38,25 +39,24 @@ func main() {
 		return
 	}
 
-	downloadPath := config.DownloadPath
 	fetcher.SetURL(config.MangaDexUrl)
 
 	fetchedMangas, err := fetcher.FetchMangas(
-		"Naruto",
-		"Blue Lock",
 		"Plastic Memories",
 		"Solo Leveling",
 		"Omniscient Reader's Viewpoint",
-		"Beginning after the end")
+		"Beginning after the end",
+		"Necromancer",
+		"The fragrant flower blooms with dignity",
+		"blue box",
+		"The world after the fall",
+		"great estate developer",
+		"call of the night")
 	if err != nil {
 		logger.ErrorFromStringF("While fetching manga's: " + err.Error())
 		return
 	}
 
-	err = fetcher.AddChaptersToMangas(fetchedMangas)
-	if err != nil {
-		return
-	}
 
 	chapterParams := url.Values{}
 	languages := []string{"en"}
@@ -67,6 +67,10 @@ func main() {
 		chapterParams.Add("translatedLanguage[]", language)
 	}
 
+	err = fetcher.AddChaptersToMangas(fetchedMangas, chapterParams)
+	if err != nil {
+		logger.ErrorFromStringF("Could not fetch chapters: %w", err)
+	}
 	// Timer to see how long installing all chapters takes
 	startNow := time.Now()
 	count := 0
@@ -81,21 +85,26 @@ func main() {
 
 		count += len(manga.Chapters)
 
-		err = manga.DownloadManga(downloadPath)
+		err = manga.DownloadManga(config)
 		if err != nil {
-			logger.ErrorFromStringF("Error while downloading chapters from %v: %w", manga.MangaTitle, err)
+			logger.ErrorFromStringF("Error while downloading chapters from %v: %w", manga.MangaTitle, err.Error())
+			continue
+		}
+
+		mangaTmpPath := filepath.Join(config.TmpPath, manga.MangaTitle)
+		err := os.Remove(mangaTmpPath)
+		if err != nil {
+			logger.ErrorFromStringF("Could not delete tmp dir: %w", err.Error())
 			continue
 		}
 
 	}
 	logger.LogInfoF("%v done in: %v", count, time.Since(startNow))
 
-	tmpPath := filepath.Join("..", "downloads", "tmp")
-
 	// Remove tmp folder after program is done
-	err = os.Remove(tmpPath)
+	err = os.RemoveAll(config.TmpPath)
 	if err != nil {
-		logger.WarningFromStringF("Could not delete directory: %v", err)
+		logger.WarningFromStringF("Could not delete directory: %v", err.Error())
 	}
 
 }

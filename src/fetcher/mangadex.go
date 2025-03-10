@@ -79,16 +79,8 @@ func FetchMangas(mangaTitles ...string) ([]*Manga, error) {
 	return fetchedMangas, nil
 }
 
-func AddChaptersToMangas(mangas []*Manga) error {
+func AddChaptersToMangas(mangas []*Manga, chapterParams url.Values) error {
 	for _, fetchedManga := range mangas {
-		chapterParams := url.Values{}
-		languages := []string{"en"}
-
-		chapterParams.Add("order[chapter]", "asc")
-		chapterParams.Add("limit", "500")
-		for _, language := range languages {
-			chapterParams.Add("translatedLanguage[]", language)
-		}
 
 		// Limit refers to the limit of the amount of chapters set in url query default = 100
 		err := fetchedManga.AddChaptersToManga(chapterParams, 500)
@@ -114,20 +106,20 @@ func CompressImages(chapterPathFiles []string, cbzPath string, chapter Chapter) 
 	defer zipWriter.Close()
 
 	for _, file := range chapterPathFiles {
-		fileToCbz, err := os.Open(file)
+		image, err := os.Open(file)
 		if err != nil {
 			return fmt.Errorf("Error while opening file: %w", err)
 		}
 
-		fileInfo, err := fileToCbz.Stat()
+		defer image.Close()
+
+		fileInfo, err := image.Stat()
 		if err != nil {
-			fileToCbz.Close()
 			return fmt.Errorf("Error while getting file info: %w", err)
 		}
 
 		header, err := zip.FileInfoHeader(fileInfo)
 		if err != nil {
-			fileToCbz.Close()
 			return fmt.Errorf("Error while heading file: %w", err)
 		}
 
@@ -135,17 +127,13 @@ func CompressImages(chapterPathFiles []string, cbzPath string, chapter Chapter) 
 
 		writer, err := zipWriter.CreateHeader(header)
 		if err != nil {
-			fileToCbz.Close()
 			return fmt.Errorf("Error while creating writer: %w", err)
 		}
 
-		_, err = io.Copy(writer, fileToCbz)
+		_, err = io.Copy(writer, image)
 		if err != nil {
-			fileToCbz.Close()
 			return fmt.Errorf("Error while copying files into zip: %w", err)
 		}
-
-		fileToCbz.Close()
 
 	}
 	logger.LogInfo("Cbz created succefully " + cbzPathWithChapter)

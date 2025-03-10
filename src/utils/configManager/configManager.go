@@ -10,6 +10,7 @@ type Config struct {
 	MangaDexUrl string `yaml:"mangadex_url"`
 	DownloadPath string `yaml:"download_path"`
 	LogPath string `yaml:"log_path"`
+	TmpPath string `yaml:"tmp_path"`
 }
 
 func LoadConfig(path string) (*Config, error) {
@@ -28,7 +29,7 @@ func LoadConfig(path string) (*Config, error) {
 	return configFile, nil
 }
 
-func GenerateConfig(path string, downloadPath string, logPath string) error {
+func GenerateConfig(path string, downloadPath string, logPath string, tmpPath string) error {
 	configFile, err := os.Create(path)
 	if err != nil {
 		return err
@@ -36,7 +37,8 @@ func GenerateConfig(path string, downloadPath string, logPath string) error {
 
 	basicConfig := "mangadex_url: 'https://api.mangadex.org'" +
 		"\ndownload_path: '" + downloadPath + "'" +
-		"\nlog_path: '" + logPath + "'"
+		"\nlog_path: '" + logPath + "'" +
+		"\ntmp_path: '" + tmpPath + "'"
 
 	configFile.Write([]byte(basicConfig))
 	return nil
