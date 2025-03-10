@@ -46,7 +46,6 @@ func main() {
 		logger.ErrorFromStringF("While fetching manga's: " + err.Error())
 		return
 	}
-
 /*	err = fetcher.AddChaptersToMangas(fetchedMangas)
 	if err != nil {
 		logger.ErrorFromStringF("While adding chapters to manga's: " + err.Error())

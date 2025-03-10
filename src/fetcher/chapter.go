@@ -10,6 +10,7 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"sync"
 )
 
 type Cover struct {
@@ -125,9 +126,20 @@ func (chapter Chapter) DownloadChapter(downloadPath string) error {
 		return fmt.Errorf("while making directories: " + err.Error())
 	}
 
-	err = chapter.DownloadPages(pngUrls, path, cbzPath)
-	if err != nil {
-		return err
-	}
+	ch := make(chan error)
+	var weightGroup sync.WaitGroup
+	go func() {
+		weightGroup.Add(1)
+		defer weightGroup.Done()
+		err = chapter.DownloadPages(pngUrls, path, cbzPath)
+		if err != nil {
+			logger.ErrorFromStringF("Something went wrong while downloading images: ", err.Error())
+		}
+	} ()
+	weightGroup.Wait()
+	go func() {
+		close(ch)
+	}()
+
 	return nil
 }
