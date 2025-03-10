@@ -41,16 +41,22 @@ func main() {
 	downloadPath := config.DownloadPath
 	fetcher.SetURL(config.MangaDexUrl)
 
-	fetchedMangas, err := fetcher.FetchMangas(os.Args[1])
+	fetchedMangas, err := fetcher.FetchMangas(
+		"Naruto",
+		"Blue Lock",
+		"Plastic Memories",
+		"Solo Leveling",
+		"Omniscient Reader's Viewpoint",
+		"Beginning after the end")
 	if err != nil {
 		logger.ErrorFromStringF("While fetching manga's: " + err.Error())
 		return
 	}
-/*	err = fetcher.AddChaptersToMangas(fetchedMangas)
+
+	err = fetcher.AddChaptersToMangas(fetchedMangas)
 	if err != nil {
-		logger.ErrorFromStringF("While adding chapters to manga's: " + err.Error())
 		return
-	}*/
+	}
 
 	chapterParams := url.Values{}
 	languages := []string{"en"}
@@ -60,20 +66,25 @@ func main() {
 	for _, language := range languages {
 		chapterParams.Add("translatedLanguage[]", language)
 	}
+
+	// Timer to see how long installing all chapters takes
 	startNow := time.Now()
 	count := 0
 	for _, manga := range fetchedMangas {
 		// Limit refers to the limit of the amount of chapters set in url query default = 100
-		err := manga.AddChaptersToManga(chapterParams, 500)
-		count += len(manga.Chapters)
+
+/*		err := manga.AddChaptersToManga(chapterParams, 500)
 		if err != nil {
-			logger.ErrorFromStringF("Error while adding chapters to manga: %w", err)
-		}
+			logger.ErrorFromStringF("Error while adding chapters to %v: %w", manga.MangaTitle, err)
+			continue
+		}*/
+
+		count += len(manga.Chapters)
 
 		err = manga.DownloadManga(downloadPath)
 		if err != nil {
-			logger.ErrorFromErr(err)
-			return
+			logger.ErrorFromStringF("Error while downloading chapters from %v: %w", manga.MangaTitle, err)
+			continue
 		}
 
 	}

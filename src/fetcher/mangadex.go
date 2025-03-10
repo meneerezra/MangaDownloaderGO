@@ -48,29 +48,32 @@ func RequestToJsonBytes(urlString string, params url.Values) ([]byte, error) {
 }
 
 // FetchMangas This returns a list of all manga's that were found based on the title given
-func FetchMangas(mangaTitle string) ([]*Manga, error) {
-	params := url.Values{}
-	params.Add("title", mangaTitle)
-	body, err := RequestToJsonBytes(MangaDexUrl+"/manga", params)
-	if err != nil {
-		return nil, fmt.Errorf("Error while requesting JSON: %w", err)
-	}
-
+func FetchMangas(mangaTitles ...string) ([]*Manga, error) {
 	var fetchedMangas []*Manga
-	var mangadexResponse jsonModels.MangaDexMangaResponse
-	if err := json.Unmarshal(body, &mangadexResponse); err != nil {
-		return nil, fmt.Errorf("Error while deserializing JSON from mangadex: %w", err)
-	}
 
-	for _, manga := range mangadexResponse.Data {
-		var chapters []Chapter
-		mangaObject := Manga{
-			ID:           manga.ID,
-			MangaTitle:   manga.Attributes.Title["en"],
-			Chapters:     chapters,
-			ChapterCount: 0,
+	for _, mangaTitle := range mangaTitles {
+		params := url.Values{}
+		params.Add("title", mangaTitle)
+		body, err := RequestToJsonBytes(MangaDexUrl+"/manga", params)
+		if err != nil {
+			return nil, fmt.Errorf("Error while requesting JSON: %w", err)
 		}
-		fetchedMangas = append(fetchedMangas, &mangaObject)
+
+		var mangadexResponse jsonModels.MangaDexMangaResponse
+		if err := json.Unmarshal(body, &mangadexResponse); err != nil {
+			return nil, fmt.Errorf("Error while deserializing JSON from mangadex: %w", err)
+		}
+
+		for _, manga := range mangadexResponse.Data {
+			var chapters []Chapter
+			mangaObject := Manga{
+				ID:           manga.ID,
+				MangaTitle:   manga.Attributes.Title["en"],
+				Chapters:     chapters,
+				ChapterCount: 0,
+			}
+			fetchedMangas = append(fetchedMangas, &mangaObject)
+		}
 	}
 
 	return fetchedMangas, nil
@@ -143,7 +146,7 @@ func CompressImages(chapterPathFiles []string, cbzPath string, chapter Chapter) 
 		}
 
 		fileToCbz.Close()
-		
+
 	}
 	logger.LogInfo("Cbz created succefully " + cbzPathWithChapter)
 	return nil
