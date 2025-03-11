@@ -64,12 +64,17 @@ func FetchMangas(mangaTitles ...string) ([]*Manga, error) {
 			return nil, fmt.Errorf("Error while deserializing JSON from mangadex: %w", err)
 		}
 
-		for _, manga := range mangadexResponse.Data {
-			var chapters []Chapter
+		for _, mangaDexData := range mangadexResponse.Data {
+			var title string
+			for _, value := range mangaDexData.Attributes.Title {
+				title = value
+				break
+			}
+
 			mangaObject := Manga{
-				ID:           manga.ID,
-				MangaTitle:   manga.Attributes.Title["en"],
-				Chapters:     chapters,
+				ID:           mangaDexData.ID,
+				MangaTitle:   title,
+				Chapters:     []Chapter{},
 				ChapterCount: 0,
 			}
 			fetchedMangas = append(fetchedMangas, &mangaObject)

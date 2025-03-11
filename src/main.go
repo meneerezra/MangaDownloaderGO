@@ -42,8 +42,9 @@ func main() {
 	fetcher.SetURL(config.MangaDexUrl)
 
 	fetchedMangas, err := fetcher.FetchMangas(
+		"blue Lock",
 		"Plastic Memories",
-/*		"Solo Leveling",
+		"Solo Leveling",
 		"Omniscient Reader's Viewpoint",
 		"Beginning after the end",
 		"Necromancer",
@@ -51,7 +52,7 @@ func main() {
 		"blue box",
 		"The world after the fall",
 		"great estate developer",
-		"call of the night"*/)
+		"call of the night")
 	if err != nil {
 		logger.ErrorFromStringF("While fetching manga's: " + err.Error())
 		return
@@ -77,6 +78,7 @@ func main() {
 	for _, manga := range fetchedMangas {
 		count += len(manga.Chapters)
 
+		// Go routines only called when downloading the pages for rate limit reasons (the uploads api tends to have no rate limits)
 		err = manga.DownloadManga(config)
 		if err != nil {
 			logger.ErrorFromStringF("Error while downloading chapters from %v: %w", manga.MangaTitle, err.Error())
