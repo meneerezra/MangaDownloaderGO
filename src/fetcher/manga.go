@@ -24,10 +24,13 @@ func (manga Manga) DownloadManga(config *configManager.Config) error {
 	logger.LogInfoF("True Chapter count: %v", len(manga.Chapters))
 
 	var weightGroup sync.WaitGroup
+	ch := make(chan struct{}, 20)
+
 
 	for i, chapter := range manga.Chapters {
 		logger.LogInfoF("%v : %v : %v", i, chapter.ChapterNumber, chapter.Title)
-		err := chapter.DownloadChapter(config, &weightGroup)
+		ch <- struct{}{}
+		err := chapter.DownloadChapter(config, &weightGroup, ch)
 		if err != nil {
 			logger.ErrorFromErr(err)
 		}

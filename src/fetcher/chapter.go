@@ -93,7 +93,7 @@ func (chapter Chapter) DownloadPages(chapterPNGs jsonModels.ChapterImages, manga
 	return nil
 }
 
-func (chapter Chapter) DownloadChapter(config *configManager.Config, weightGroup *sync.WaitGroup) error {
+func (chapter Chapter) DownloadChapter(config *configManager.Config, weightGroup *sync.WaitGroup, ch chan struct{}) error {
 	downloadPath := config.DownloadPath
 
 	pngUrls, err := chapter.FetchImages()
@@ -128,6 +128,7 @@ func (chapter Chapter) DownloadChapter(config *configManager.Config, weightGroup
 	}
 
 	weightGroup.Add(1)
+	defer func() { <-ch }()
 	go func() {
 		defer weightGroup.Done()
 		err = chapter.DownloadPages(pngUrls, mangaTmpPath, cbzPath)
