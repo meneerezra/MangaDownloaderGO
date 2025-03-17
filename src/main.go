@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"mangaDownloaderGO/fetcher"
 	"mangaDownloaderGO/utils/configManager"
 	"mangaDownloaderGO/utils/logger"
@@ -14,28 +15,16 @@ func main() {
 	//router := gin.Default()
 	//server.StartServer(router)
 
-	configPath := filepath.Join("..", "config.yml")
-	if _, err := os.Open(configPath); err != nil {
-		downloadPath := filepath.Join("..", "downloads", "manga")
-		logPath := filepath.Join("..", "logs")
-		tmpPath := filepath.Join("..", "downloads", "tmp")
-		err := configManager.GenerateConfig(configPath, downloadPath, logPath, tmpPath)
-		if err != nil {
-			logger.ErrorFromErr(err)
-			return
-		}
-	}
-
+	configPath := filepath.Join("..", "config.json")
 	config, err := configManager.LoadConfig(configPath)
 	if err != nil {
-		logger.ErrorFromErr(err)
+		fmt.Printf("Could not load config: %w", err)
 		return
 	}
 
-	logPath := filepath.Join(config.LogPath, time.Now().String() + ".txt")
-	err = logger.CreateFile(logPath)
+	err = logger.CreateFile(filepath.Join(config.LogPath, time.Now().String() + ".txt"))
 	if err != nil {
-		logger.ErrorFromErr(err)
+		logger.ErrorFromStringF("Could not load logger: %w", err)
 		return
 	}
 
