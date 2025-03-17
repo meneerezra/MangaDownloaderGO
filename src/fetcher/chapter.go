@@ -93,6 +93,10 @@ func (chapter Chapter) DownloadPages(chapterPNGs jsonModels.ChapterImages, manga
 	return nil
 }
 
+// RelationShipID:ScanGroupName
+var scanlationGroupNameList = map[string]string{}
+
+
 func (chapter Chapter) DownloadChapter(config *configManager.Config, weightGroup *sync.WaitGroup) error {
 	downloadPath := config.DownloadPath
 
@@ -104,16 +108,30 @@ func (chapter Chapter) DownloadChapter(config *configManager.Config, weightGroup
 	mangaTmpPath := filepath.Join(config.TmpPath, chapter.Manga.MangaTitle)
 	cbzPath := filepath.Join(downloadPath, chapter.Manga.MangaTitle)
 
+
 	for _, relationShip := range chapter.RelationsShips {
 		if relationShip.Type != "scanlation_group" {
 			continue
 		}
-		scanlationGroupName, err := FetchGroupNameByID(relationShip.ID)
-		if err != nil {
-			return err
+		// Cache scanlationGroupNames in memory to avoid needless requests
+		if scanlationGroupNameList[relationShip.ID] != "" {
+			chapter.ScanlationGroupName = scanlationGroupNameList[relationShip.ID]
+		} else {
+			// Add another entry to []scanlationGroupNameList if note exists
+			scanlationGroupName, err := FetchGroupNameByID(relationShip.ID)
+			chapter.ScanlationGroupName = scanlationGroupName
+			scanlationGroupNameList[relationShip.ID] = scanlationGroupName
+			if err != nil {
+				return err
+			}
 		}
-		chapter.ScanlationGroupName = scanlationGroupName
-		cbzPath = filepath.Join(cbzPath, chapter.Manga.MangaTitle + " [" +  scanlationGroupName + "]")
+		for id, name := range scanlationGroupNameList {
+			logger.LogInfo("id: " + id)
+			logger.LogInfo("name: " + name)
+			fmt.Println()
+		}
+		
+		cbzPath = filepath.Join(cbzPath, chapter.Manga.MangaTitle + " [" +  chapter.ScanlationGroupName + "]")
 		break
 	}
 
