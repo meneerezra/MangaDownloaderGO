@@ -125,11 +125,6 @@ func (chapter Chapter) DownloadChapter(config *configManager.Config, weightGroup
 				return err
 			}
 		}
-		for id, name := range scanlationGroupNameList {
-			logger.LogInfo("id: " + id)
-			logger.LogInfo("name: " + name)
-			fmt.Println()
-		}
 		
 		cbzPath = filepath.Join(cbzPath, chapter.Manga.MangaTitle + " [" +  chapter.ScanlationGroupName + "]")
 		break
