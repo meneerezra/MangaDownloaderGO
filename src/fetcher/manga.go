@@ -18,7 +18,7 @@ type Manga struct {
 	Chapters     []Chapter
 }
 
-func (manga Manga) DownloadManga(config *configManager.Config) error {
+func (manga Manga) DownloadManga(config *configManager.Config, rateLimit *RateLimit) error {
 	logger.LogInfoF("Manga: %v", manga.MangaTitle)
 	logger.LogInfoF("Chapter count: %v", manga.ChapterCount)
 	logger.LogInfoF("True Chapter count: %v", len(manga.Chapters))
@@ -27,7 +27,7 @@ func (manga Manga) DownloadManga(config *configManager.Config) error {
 
 	for i, chapter := range manga.Chapters {
 		logger.LogInfoF("%v : %v : %v", i, chapter.ChapterNumber, chapter.Title)
-		err := chapter.DownloadChapter(config, &weightGroup)
+		err := chapter.DownloadChapter(config, &weightGroup, rateLimit)
 		if err != nil {
 			logger.ErrorFromErr(err)
 		}
@@ -38,8 +38,8 @@ func (manga Manga) DownloadManga(config *configManager.Config) error {
 }
 
 // AddChaptersToManga Automatically executes FetchChaptersFromMangaDex() too
-func (manga *Manga) AddChaptersToManga(params url.Values, limit int) error {
-	chapters, err := manga.FetchChaptersFromMangaDex(params)
+func (manga *Manga) AddChaptersToManga(params url.Values, limit int, rateLimit *RateLimit) error {
+	chapters, err := manga.FetchChaptersFromMangaDex(params, rateLimit)
 	if err != nil {
 		return fmt.Errorf("Error requesting chapters: %w", err)
 	}
@@ -61,14 +61,14 @@ func (manga *Manga) AddChaptersToManga(params url.Values, limit int) error {
 		}
 
 		params.Set("offset", strconv.Itoa(offset))
-		return manga.AddChaptersToManga(params, limit)
+		return manga.AddChaptersToManga(params, limit, rateLimit)
 	}
 
 	return nil
 }
 
 // FetchChaptersFromMangaDex This has its own function for recursion when rate limit hit
-func (manga Manga) FetchChaptersFromMangaDex(params url.Values) ([]Chapter, error) {
+func (manga Manga) FetchChaptersFromMangaDex(params url.Values, rateLimit *RateLimit) ([]Chapter, error) {
 	var chapters []Chapter
 
 	body, err := RequestToJsonBytes(MangaDexUrl+"/manga/"+manga.ID+"/feed", params)
@@ -80,8 +80,8 @@ func (manga Manga) FetchChaptersFromMangaDex(params url.Values) ([]Chapter, erro
 
 	// Mangadex (or cloudflare im not sure) sends a html page here when ratelimit is reached
 	if err := json.Unmarshal(body, &mangadexResponse); err != nil {
-		HandleRatelimit()
-		return manga.FetchChaptersFromMangaDex(params)
+		rateLimit.HandleRatelimit()
+		return manga.FetchChaptersFromMangaDex(params, rateLimit)
 	}
 
 	for _, chapterData := range mangadexResponse.Data {

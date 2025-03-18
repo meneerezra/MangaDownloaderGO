@@ -57,7 +57,22 @@ func main() {
 		chapterParams.Add("translatedLanguage[]", language)
 	}
 
-	err = fetcher.AddChaptersToMangas(fetchedMangas, chapterParams)
+	rateLimit := fetcher.RateLimit{
+		TimeoutSeconds: 0,
+	}
+
+	go func() {
+		for {
+			if time.Since(rateLimit.TimeLastUsed) > time.Second * 15 {
+				if rateLimit.TimeoutSeconds == 15 {
+					continue
+				}
+				rateLimit.TimeoutSeconds = 0
+			}
+		}
+	}()
+
+	err = fetcher.AddChaptersToMangas(fetchedMangas, chapterParams, &rateLimit)
 	if err != nil {
 		logger.ErrorFromStringF("Could not fetch chapters: %w", err)
 	}
@@ -68,7 +83,7 @@ func main() {
 		count += len(manga.Chapters)
 
 		// Go routines only called when downloading the pages for rate limit reasons (the uploads api tends to have no rate limits)
-		err = manga.DownloadManga(config)
+		err = manga.DownloadManga(config, &rateLimit)
 		if err != nil {
 			logger.ErrorFromStringF("Error while downloading chapters from %v: %w", manga.MangaTitle, err.Error())
 			continue

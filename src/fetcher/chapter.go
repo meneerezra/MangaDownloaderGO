@@ -33,7 +33,7 @@ type ChapterRelationship struct {
 	Type string
 }
 
-func (chapter Chapter) FetchImages() (jsonModels.ChapterImages, error) {
+func (chapter Chapter) FetchImages(rateLimit *RateLimit) (jsonModels.ChapterImages, error) {
 	chapterImagesObject := jsonModels.ChapterImages{}
 	body, err := RequestToJsonBytes(MangaDexUrl+"/at-home/server/"+chapter.ID, url.Values{})
 	if err != nil {
@@ -46,8 +46,8 @@ func (chapter Chapter) FetchImages() (jsonModels.ChapterImages, error) {
 	}
 
 	if mangaDexDownloadResponse.Result == "error" {
-		HandleRatelimit()
-		return chapter.FetchImages()
+		rateLimit.HandleRatelimit()
+		return chapter.FetchImages(rateLimit)
 	}
 
 	chapterImagesObject.BaseURL = mangaDexDownloadResponse.BaseURL
@@ -97,10 +97,10 @@ func (chapter Chapter) DownloadPages(chapterPNGs jsonModels.ChapterImages, manga
 var scanlationGroupNameList = map[string]string{}
 
 
-func (chapter Chapter) DownloadChapter(config *configManager.Config, weightGroup *sync.WaitGroup) error {
+func (chapter Chapter) DownloadChapter(config *configManager.Config, weightGroup *sync.WaitGroup, rateLimit *RateLimit) error {
 	downloadPath := config.DownloadPath
 
-	pngUrls, err := chapter.FetchImages()
+	pngUrls, err := chapter.FetchImages(rateLimit)
 	if err != nil {
 		return fmt.Errorf("While fetching image urls from chapter: " + err.Error())
 	}
@@ -118,7 +118,7 @@ func (chapter Chapter) DownloadChapter(config *configManager.Config, weightGroup
 			chapter.ScanlationGroupName = scanlationGroupNameList[relationShip.ID]
 		} else {
 			// Add another entry to []scanlationGroupNameList if note exists
-			scanlationGroupName, err := FetchGroupNameByID(relationShip.ID)
+			scanlationGroupName, err := FetchGroupNameByID(relationShip.ID, rateLimit)
 			chapter.ScanlationGroupName = scanlationGroupName
 			scanlationGroupNameList[relationShip.ID] = scanlationGroupName
 			if err != nil {

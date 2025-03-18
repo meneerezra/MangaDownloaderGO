@@ -13,7 +13,6 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
-	"time"
 )
 
 var MangaDexUrl string
@@ -84,11 +83,11 @@ func FetchMangas(mangaTitles ...string) ([]*Manga, error) {
 	return fetchedMangas, nil
 }
 
-func AddChaptersToMangas(mangas []*Manga, chapterParams url.Values) error {
+func AddChaptersToMangas(mangas []*Manga, chapterParams url.Values, rateLimit *RateLimit) error {
 	for _, fetchedManga := range mangas {
 
 		// Limit refers to the limit of the amount of chapters set in url query default = 100
-		err := fetchedManga.AddChaptersToManga(chapterParams, 500)
+		err := fetchedManga.AddChaptersToManga(chapterParams, 500, rateLimit)
 		if err != nil {
 			return fmt.Errorf("Error while adding chapters to manga: %w", err)
 		}
@@ -145,13 +144,7 @@ func CompressImages(chapterPathFiles []string, cbzPath string, chapter Chapter) 
 	return nil
 }
 
-func HandleRatelimit() {
-	rateLimitTimer := time.NewTimer(30 * time.Second)
-	logger.WarningFromString("Rate limit hit starting 30s timer")
-	<-rateLimitTimer.C
-}
-
-func FetchGroupNameByID(id string) (string, error) {
+func FetchGroupNameByID(id string, rateLimit *RateLimit) (string, error) {
 	type Attributes struct {
 		Name string `json:"name"`
 	}
@@ -172,8 +165,8 @@ func FetchGroupNameByID(id string) (string, error) {
 
 	var groupResponse GroupResponse
 	if err = json.Unmarshal(body, &groupResponse); err != nil {
-		HandleRatelimit()
-		return FetchGroupNameByID(id)
+		rateLimit.HandleRatelimit()
+		return FetchGroupNameByID(id, rateLimit)
 	}
 
 	name := groupResponse.Data.Attributes.Name
