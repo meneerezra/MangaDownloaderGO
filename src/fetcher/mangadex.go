@@ -85,7 +85,6 @@ func FetchMangas(mangaTitles ...string) ([]*Manga, error) {
 
 func AddChaptersToMangas(mangas []*Manga, chapterParams url.Values, rateLimit *RateLimit) error {
 	for _, fetchedManga := range mangas {
-
 		// Limit refers to the limit of the amount of chapters set in url query default = 100
 		err := fetchedManga.AddChaptersToManga(chapterParams, 500, rateLimit)
 		if err != nil {

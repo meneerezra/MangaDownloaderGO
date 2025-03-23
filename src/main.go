@@ -3,7 +3,8 @@ package main
 import (
 	"fmt"
 	"mangaDownloaderGO/fetcher"
-	"mangaDownloaderGO/utils/configManager"
+	"mangaDownloaderGO/utils/jsonUtils"
+	"mangaDownloaderGO/utils/jsonUtils/jsonManagerModels"
 	"mangaDownloaderGO/utils/logger"
 	"net/url"
 	"os"
@@ -15,38 +16,26 @@ func main() {
 	//router := gin.Default()
 	//server.StartServer(router)
 
-	configPath := filepath.Join("..", "config.json")
-	config, err := configManager.LoadConfig(configPath)
+	settings := &jsonManagerModels.Config{}
+	_, err := jsonUtils.NewJsonManager(filepath.Join("..", "settings.json"), settings)
 	if err != nil {
 		fmt.Printf("Could not load config: %w", err)
 		return
 	}
 
-	err = logger.CreateFile(filepath.Join(config.LogPath, time.Now().String() + ".txt"))
+	err = logger.CreateFile(settings.LogPath)
 	if err != nil {
-		logger.ErrorFromStringF("Could not load logger: %w", err)
+		fmt.Printf("Could not create log file: %w", err)
 		return
 	}
 
-	fetcher.SetURL(config.MangaDexUrl)
+	fetcher.SetURL(settings.MangaDexUrl)
 
-	fetchedMangas, err := fetcher.FetchMangas(
-		"blue Lock",
-		"Plastic Memories",
-		"Solo Leveling",
-		"Omniscient Reader's Viewpoint",
-		"Beginning after the end",
-		"Necromancer",
-		"The fragrant flower blooms with dignity",
-		"blue box",
-		"The world after the fall",
-		"great estate developer",
-		"call of the night")
+	fetchedMangas, err := fetcher.FetchMangas(settings.Mangas...)
 	if err != nil {
 		logger.ErrorFromStringF("While fetching manga's: " + err.Error())
 		return
 	}
-
 
 	chapterParams := url.Values{}
 	languages := []string{"en"}
@@ -63,7 +52,7 @@ func main() {
 
 	go func() {
 		for {
-			if time.Since(rateLimit.TimeLastUsed) > time.Second * 15 {
+			if time.Since(rateLimit.TimeLastUsed) > time.Second*15 {
 				if rateLimit.TimeoutSeconds == 15 {
 					continue
 				}
@@ -83,13 +72,13 @@ func main() {
 		count += len(manga.Chapters)
 
 		// Go routines only called when downloading the pages for rate limit reasons (the uploads api tends to have no rate limits)
-		err = manga.DownloadManga(config, &rateLimit)
+		err = manga.DownloadManga(settings, &rateLimit)
 		if err != nil {
 			logger.ErrorFromStringF("Error while downloading chapters from %v: %w", manga.MangaTitle, err.Error())
 			continue
 		}
 
-		mangaTmpPath := filepath.Join(config.TmpPath, manga.MangaTitle)
+		mangaTmpPath := filepath.Join(settings.TmpPath, manga.MangaTitle)
 		err := os.RemoveAll(mangaTmpPath)
 		if err != nil {
 			logger.ErrorFromStringF("Could not delete tmp dir: %w", err.Error())

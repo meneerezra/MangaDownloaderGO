@@ -7,3 +7,4 @@ config.yml
 logs/
 komga
 config.json
+settings.json

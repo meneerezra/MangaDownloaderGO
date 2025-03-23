@@ -25,18 +25,18 @@ var white = "\033[97m"
 var Path string
 
 func CreateFile(path string) error {
-	err := os.MkdirAll(filepath.Dir(path), os.ModePerm)
+	err := os.MkdirAll(path, os.ModePerm)
 	if err != nil {
 		return err
 	}
+	Path = filepath.Join(path, time.Now().String())
 
-	file, err := os.Create(path)
+	file, err := os.Create(Path)
 	if err != nil {
 		return err
 	}
 
 	defer file.Close()
-	Path = path
 	return nil
 }
 

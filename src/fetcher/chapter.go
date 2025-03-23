@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"io"
 	"mangaDownloaderGO/fetcher/jsonModels"
-	"mangaDownloaderGO/utils/configManager"
+	"mangaDownloaderGO/utils/jsonUtils/jsonManagerModels"
 	"mangaDownloaderGO/utils/logger"
 	"net/http"
 	"net/url"
@@ -97,7 +97,7 @@ func (chapter Chapter) DownloadPages(chapterPNGs jsonModels.ChapterImages, manga
 var scanlationGroupNameList = map[string]string{}
 
 
-func (chapter Chapter) DownloadChapter(config *configManager.Config, weightGroup *sync.WaitGroup, rateLimit *RateLimit) error {
+func (chapter Chapter) DownloadChapter(config *jsonManagerModels.Config, weightGroup *sync.WaitGroup, rateLimit *RateLimit) error {
 	downloadPath := config.DownloadPath
 
 	pngUrls, err := chapter.FetchImages(rateLimit)
