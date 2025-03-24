@@ -1,4 +1,4 @@
-package fetcher
+package mangadex
 
 import (
 	"mangaDownloaderGO/utils/logger"

@@ -1,4 +1,4 @@
-package jsonModels
+package mangadex
 
 type MangaDexMangaResponse struct {
 	Data []MangaDexMangaDataItem `json:"data"`
@@ -6,8 +6,9 @@ type MangaDexMangaResponse struct {
 }
 
 type MangaDexMangaDataItem struct {
-	ID         string          `json:"id"`
-	Attributes MangaAttributes `json:"attributes"`
+	ID            string          `json:"id"`
+	Attributes    MangaAttributes `json:"attributes"`
+	Relationships []Relationship  `json:"relationships"`
 }
 
 type MangaAttributes struct {

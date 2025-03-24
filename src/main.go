@@ -2,7 +2,7 @@ package main
 
 import (
 	"fmt"
-	"mangaDownloaderGO/fetcher"
+	"mangaDownloaderGO/mangadex"
 	"mangaDownloaderGO/utils/jsonUtils"
 	"mangaDownloaderGO/utils/jsonUtils/jsonManagerModels"
 	"mangaDownloaderGO/utils/logger"
@@ -29,9 +29,9 @@ func main() {
 		return
 	}
 
-	fetcher.SetURL(settings.MangaDexUrl)
+	mangadexClient := mangadex.NewMangadexClient(settings.MangaDexUrl)
 
-	fetchedMangas, err := fetcher.FetchMangas(settings.Mangas...)
+	fetchedMangas, err := mangadexClient.FetchMangasByTitles(mangadexClient, settings.Mangas...)
 	if err != nil {
 		logger.ErrorFromStringF("While fetching manga's: " + err.Error())
 		return
@@ -46,7 +46,7 @@ func main() {
 		chapterParams.Add("translatedLanguage[]", language)
 	}
 
-	rateLimit := fetcher.RateLimit{
+	rateLimit := mangadex.RateLimit{
 		TimeoutSeconds: 0,
 	}
 
@@ -61,7 +61,7 @@ func main() {
 		}
 	}()
 
-	err = fetcher.AddChaptersToMangas(fetchedMangas, chapterParams, &rateLimit)
+	err = mangadex.AddChaptersToMangas(fetchedMangas, chapterParams, &rateLimit)
 	if err != nil {
 		logger.ErrorFromStringF("Could not fetch chapters: %w", err)
 	}

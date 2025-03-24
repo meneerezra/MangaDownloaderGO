@@ -1,17 +1,17 @@
 package storage
 
 import (
-	"mangaDownloaderGO/fetcher"
+	"mangaDownloaderGO/mangadex"
 )
 
 
 // ALL STILL TO DO
-var mangaList []fetcher.Manga
+var mangaList []mangadex.Manga
 
-func GetMangaList() []fetcher.Manga {
+func GetMangaList() []mangadex.Manga {
 	return mangaList
 }
 
-func AddToMangaList(manga fetcher.Manga) {
+func AddToMangaList(manga mangadex.Manga) {
 	mangaList = append(mangaList, manga)
 }

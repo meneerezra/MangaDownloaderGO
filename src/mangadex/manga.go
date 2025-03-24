@@ -1,9 +1,8 @@
-package fetcher
+package mangadex
 
 import (
 	"encoding/json"
 	"fmt"
-	"mangaDownloaderGO/fetcher/jsonModels"
 	"mangaDownloaderGO/utils/jsonUtils/jsonManagerModels"
 	"mangaDownloaderGO/utils/logger"
 	"net/url"
@@ -16,6 +15,8 @@ type Manga struct {
 	MangaTitle   string
 	ChapterCount int
 	Chapters     []Chapter
+	Relationships []Relationship
+	MangaDexClient *MangaDexClient
 }
 
 func (manga Manga) DownloadManga(config *jsonManagerModels.Config, rateLimit *RateLimit) error {
@@ -31,7 +32,6 @@ func (manga Manga) DownloadManga(config *jsonManagerModels.Config, rateLimit *Ra
 		if err != nil {
 			logger.ErrorFromErr(err)
 		}
-
 	}
 	weightGroup.Wait()
 	return nil
@@ -71,12 +71,12 @@ func (manga *Manga) AddChaptersToManga(params url.Values, limit int, rateLimit *
 func (manga Manga) FetchChaptersFromMangaDex(params url.Values, rateLimit *RateLimit) ([]Chapter, error) {
 	var chapters []Chapter
 
-	body, err := RequestToJsonBytes(MangaDexUrl+"/manga/"+manga.ID+"/feed", params)
+	body, err := RequestToJsonBytes(manga.MangaDexClient.BaseURL+"/manga/"+manga.ID+"/feed", params)
 	if err != nil {
 		return nil, fmt.Errorf("Error while doing a get request: %w", err)
 	}
 
-	var mangadexResponse jsonModels.MangaDexChapterResponse
+	var mangadexResponse MangaDexChapterResponse
 
 	// Mangadex (or cloudflare im not sure) sends a html page here when ratelimit is reached
 	if err := json.Unmarshal(body, &mangadexResponse); err != nil {
@@ -85,9 +85,9 @@ func (manga Manga) FetchChaptersFromMangaDex(params url.Values, rateLimit *RateL
 	}
 
 	for _, chapterData := range mangadexResponse.Data {
-		var relationShips []ChapterRelationship
+		var relationShips []Relationship
 		for _, relationShip := range chapterData.Relationships {
-			relationShips = append(relationShips, ChapterRelationship{
+			relationShips = append(relationShips, Relationship{
 				ID:   relationShip.ID,
 				Type: relationShip.Type,
 			})
