@@ -129,7 +129,7 @@ func (chapter Chapter) DownloadChapter(config *jsonManagerModels.Config, weightG
 		break
 	}
 
-	for _, relationShip := range chapter.RelationsShips {
+	for _, relationShip := range chapter.Manga.Relationships {
 		if relationShip.Type != RelationshipTypeAuthor {
 			continue
 		}
