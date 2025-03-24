@@ -104,7 +104,8 @@ func (chapter Chapter) DownloadChapter(config *jsonManagerModels.Config, weightG
 	}
 
 	mangaTmpPath := filepath.Join(config.TmpPath, chapter.Manga.MangaTitle)
-	cbzPath := filepath.Join(downloadPath, chapter.Manga.MangaTitle)
+	mangaPath := downloadPath
+	scanFolderName := ""
 
 
 	for _, relationShip := range chapter.RelationsShips {
@@ -125,7 +126,7 @@ func (chapter Chapter) DownloadChapter(config *jsonManagerModels.Config, weightG
 		}
 
 		if chapter.ScanlationGroupName == "" {
-			cbzPath = filepath.Join(cbzPath, chapter.Manga.MangaTitle + " [" +  "NO SCAN GROUP" + "]")
+			scanFolderName = chapter.Manga.MangaTitle + " [" +  "NO SCAN GROUP" + "]"
 			break
 		}
 
@@ -142,8 +143,8 @@ func (chapter Chapter) DownloadChapter(config *jsonManagerModels.Config, weightG
 			authorNameMap[relationShip.ID] = authorName
 		}
 
-		logger.LogInfo(authorName)
-		cbzPath = filepath.Join(cbzPath, chapter.Manga.MangaTitle + " - " + authorName + " [" +  chapter.ScanlationGroupName + "]")
+		scanFolderName = chapter.Manga.MangaTitle + " - " + authorName + " [" +  chapter.ScanlationGroupName + "]"
+		mangaPath = filepath.Join(mangaPath, chapter.Manga.MangaTitle + " - " + authorName, scanFolderName)
 		break
 	}
 
@@ -152,7 +153,7 @@ func (chapter Chapter) DownloadChapter(config *jsonManagerModels.Config, weightG
 		return fmt.Errorf("while making directories: " + err.Error())
 	}
 
-	err = os.MkdirAll(cbzPath, os.ModePerm)
+	err = os.MkdirAll(mangaPath, os.ModePerm)
 	if err != nil {
 		return fmt.Errorf("while making directories: " + err.Error())
 	}
@@ -160,7 +161,7 @@ func (chapter Chapter) DownloadChapter(config *jsonManagerModels.Config, weightG
 	weightGroup.Add(1)
 	go func() {
 		defer weightGroup.Done()
-		err = chapter.DownloadPages(pngUrls, mangaTmpPath, cbzPath)
+		err = chapter.DownloadPages(pngUrls, mangaTmpPath, mangaPath)
 		if err != nil {
 			logger.ErrorFromStringF("Something went wrong while downloading images: ", err.Error())
 		}
