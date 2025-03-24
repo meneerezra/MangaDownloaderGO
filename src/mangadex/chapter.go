@@ -53,7 +53,7 @@ func (chapter Chapter) FetchImages(rateLimit *RateLimit) (ChapterImages, error) 
 	return chapterImagesObject, nil
 }
 
-func (chapter Chapter) DownloadPages(chapterPNGs ChapterImages, mangaTmpPath string, cbzPath string) error {
+func (chapter Chapter) DownloadPages(chapterPNGs ChapterImages, mangaTmpPath string, mangaPath string) error {
 	var chapterPathFiles []string
 
 	for _, imageName := range chapterPNGs.ImageName {
@@ -81,7 +81,7 @@ func (chapter Chapter) DownloadPages(chapterPNGs ChapterImages, mangaTmpPath str
 		chapterPathFiles = append(chapterPathFiles, pathToImage)
 	}
 
-	err := chapter.CompressImages(chapterPathFiles, cbzPath)
+	err := chapter.CompressImages(chapterPathFiles, mangaPath)
 	if err != nil {
 		return fmt.Errorf("Error compressing PNG's to cbz: %w", err)
 	}
@@ -107,6 +107,7 @@ func (chapter Chapter) DownloadChapter(config *jsonManagerModels.Config, weightG
 	mangaPath := downloadPath
 	scanFolderName := ""
 
+	var authorName string
 
 	for _, relationShip := range chapter.RelationsShips {
 		if relationShip.Type != RelationshipTypeScanlationGroup {
@@ -125,13 +126,13 @@ func (chapter Chapter) DownloadChapter(config *jsonManagerModels.Config, weightG
 			}
 		}
 
-		if chapter.ScanlationGroupName == "" {
-			scanFolderName = chapter.Manga.MangaTitle + " [" +  "NO SCAN GROUP" + "]"
-			break
+		break
+	}
+
+	for _, relationShip := range chapter.RelationsShips {
+		if relationShip.Type != RelationshipTypeAuthor {
+			continue
 		}
-
-		var authorName string
-
 		if authorNameMap[relationShip.ID] != "" {
 			authorName = authorNameMap[relationShip.ID]
 		} else {
@@ -142,11 +143,19 @@ func (chapter Chapter) DownloadChapter(config *jsonManagerModels.Config, weightG
 			authorName = author.Attributes.Name
 			authorNameMap[relationShip.ID] = authorName
 		}
-
-		scanFolderName = chapter.Manga.MangaTitle + " - " + authorName + " [" +  chapter.ScanlationGroupName + "]"
-		mangaPath = filepath.Join(mangaPath, chapter.Manga.MangaTitle + " - " + authorName, scanFolderName)
 		break
 	}
+
+	if chapter.ScanlationGroupName == "" {
+		chapter.ScanlationGroupName = "NO SCAN GROUP"
+		logger.WarningFromString(chapter.Title + " HAS NO SCAN GROUP")
+	}
+	if authorName == "" {
+		authorName = "NO AUTHOR NAME"
+		logger.WarningFromString(chapter.Manga.MangaTitle + " HAS NO AUTHOR NAME")
+	}
+	scanFolderName = chapter.Manga.MangaTitle + " - " + authorName + " [" +  chapter.ScanlationGroupName + "]"
+	mangaPath = filepath.Join(mangaPath, chapter.Manga.MangaTitle + " - " + authorName, scanFolderName)
 
 	err = os.MkdirAll(mangaTmpPath, os.ModePerm)
 	if err != nil {
@@ -170,11 +179,11 @@ func (chapter Chapter) DownloadChapter(config *jsonManagerModels.Config, weightG
 	return nil
 }
 
-func (chapter Chapter) CompressImages(chapterPathFiles []string, cbzPath string) error {
+func (chapter Chapter) CompressImages(chapterPathFiles []string, mangaPath string) error {
 	// Can't add float as an argument to filepath.Join() so convert it first
 	chapterNumberInStr := strconv.FormatFloat(chapter.ChapterNumber, 'f', -1, 64)
-	cbzPathWithChapter := filepath.Join(cbzPath,
-		chapter.Manga.MangaTitle+" - "+"Ch. "+chapterNumberInStr+".cbz")
+	cbzPathWithChapter := filepath.Join(mangaPath,
+		chapter.Manga.MangaTitle+" - "+"Ch. "+chapterNumberInStr+" [" +  chapter.ScanlationGroupName + "]"+".cbz")
 	zipFile, err := os.Create(cbzPathWithChapter)
 	if err != nil {
 		return fmt.Errorf("Error while creating zipfile: %w", err)

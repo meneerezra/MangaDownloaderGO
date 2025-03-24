@@ -17,5 +17,5 @@ func (c *Config) DefaultValues() {
 	c.DownloadPath = filepath.Join("..", "downloads")
 	c.LogPath = filepath.Join("..", "logs")
 	c.TmpPath = filepath.Join("..", "downloads", "tmp")
-	c.Mangas = []string{"Blue Lock"}
+	c.Mangas = []string{}
 }
